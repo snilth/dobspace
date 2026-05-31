@@ -1,17 +1,16 @@
 import { createServerCaller } from "@/lib/trpc/server";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth/session";
 import { KanbanBoard, type BoardTask } from "@/components/kanban/kanban-board";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { LayoutGrid } from "lucide-react";
 import { ProjectTeamButton } from "@/components/shared/project-team-button";
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [trpc, session] = await Promise.all([
     createServerCaller(),
-    auth.api.getSession({ headers: await headers() }),
+    getSession(),
   ]);
 
   let project;

@@ -1,12 +1,11 @@
 import { createServerCaller } from "@/lib/trpc/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/auth/session";
 import { Settings } from "lucide-react";
 import { SettingsTabs } from "./settings-tabs";
 
 export default async function SettingsPage() {
   const trpc = await createServerCaller();
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
 
   const { workspace, isOwner } = await trpc.workspace.getCurrent();
   const [members, notifPrefs] = await Promise.all([

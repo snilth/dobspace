@@ -1,6 +1,5 @@
 import { createServerCaller } from "@/lib/trpc/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getSession } from "@/lib/auth/session";
 import Link from "next/link";
 import { ActivityTabs } from "@/components/dashboard/activity-tabs";
 import {
@@ -11,7 +10,7 @@ import {
 
 export default async function DashboardPage() {
   const trpc = await createServerCaller();
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   const { workspace, isOwner } = await trpc.workspace.getCurrent();
   const workspaceId = workspace.id;
 
