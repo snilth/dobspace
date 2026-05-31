@@ -3,7 +3,8 @@
 import { Bell } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
-import { useSocketEvent } from "@/hooks/use-socket";
+import { usePusherUserEvent } from "@/hooks/use-pusher";
+import { useSession } from "@/lib/auth/client";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -18,7 +19,8 @@ export function NotificationBell() {
     trpc.notifications.unreadCount.queryOptions(undefined, { refetchInterval: 30_000 })
   );
 
-  useSocketEvent("notification:new", () => {
+  const { data: session } = useSession();
+  usePusherUserEvent(session?.user.id ?? "", "notification:new", () => {
     queryClient.invalidateQueries({ queryKey: trpc.notifications.unreadCount.queryKey() });
   });
 

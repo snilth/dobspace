@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Bell, Check, CheckCheck, ExternalLink, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
-import { useSocketEvent } from "@/hooks/use-socket";
+import { usePusherUserEvent } from "@/hooks/use-pusher";
+import { useSession } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -52,7 +53,8 @@ export default function NotificationsPage() {
     },
   }));
 
-  useSocketEvent("notification:new", () => {
+  const { data: session } = useSession();
+  usePusherUserEvent(session?.user.id ?? "", "notification:new", () => {
     queryClient.invalidateQueries({ queryKey: trpc.notifications.list.queryKey() });
     queryClient.invalidateQueries({ queryKey: trpc.notifications.unreadCount.queryKey() });
   });
