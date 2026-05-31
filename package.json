@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build": "next build",
-    "build:prod": "prisma generate && prisma migrate deploy && next build",
+    "build:prod": "prisma generate && next build",
+    "db:migrate": "prisma migrate deploy",
     "start": "NODE_ENV=production tsx server.ts",
     "lint": "eslint",
     "typecheck": "tsc --noEmit"
