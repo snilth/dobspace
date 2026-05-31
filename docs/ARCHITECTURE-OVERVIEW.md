@@ -65,15 +65,15 @@
 
 ### 🎨 Frontend Layer (Browser)
 
-| Layer | Technology | Role | ทำหน้าที่ |
-|-------|-----------|------|----------|
-| **Framework** | Next.js 16 | React runtime + Server Components | ดึงข้อมูล server-side ก่อนส่งลง client, ลดการ fetch ของ client |
-| **Language** | TypeScript 5 (strict) | Type safety | ลด bugs ด้วยการ check types compile-time |
-| **UI Library** | shadcn/ui | Pre-built components (Button, Input, Dialog) | ใช้ component จาก library แทนเขียนเอง (Radix UI base) |
-| **Styling** | Tailwind CSS v4 + PostCSS | Utility-first CSS | เขียน class แทน CSS file เพื่อความเร็ว |
-| **DnD (Kanban)** | @dnd-kit | Drag-and-drop library | ลากจากนลาก task ระหว่าง columns ของ Kanban board |
-| **State Mgmt** | TanStack Query v5 | Server state caching | Cache API responses, auto-refetch เมื่อ invalidate, ลด API calls |
-| **Real-time** | Socket.io client | WebSocket listener | ฟังเหตุการณ์จาก server (task moved, notification) แบบ real-time |
+| Layer            | Technology                | Role                                         | ทำหน้าที่                                                          |
+| ---------------- | ------------------------- | -------------------------------------------- | -------------------------------------------------------------- |
+| **Framework**    | Next.js 16                | React runtime + Server Components            | ดึงข้อมูล server-side ก่อนส่งลง client, ลดการ fetch ของ client      |
+| **Language**     | TypeScript 5 (strict)     | Type safety                                  | ลด bugs ด้วยการ check types compile-time                        |
+| **UI Library**   | shadcn/ui                 | Pre-built components (Button, Input, Dialog) | ใช้ component จาก library แทนเขียนเอง (Radix UI base)            |
+| **Styling**      | Tailwind CSS v4 + PostCSS | Utility-first CSS                            | เขียน class แทน CSS file เพื่อความเร็ว                             |
+| **DnD (Kanban)** | @dnd-kit                  | Drag-and-drop library                        | ลากจากนลาก task ระหว่าง columns ของ Kanban board                |
+| **State Mgmt**   | TanStack Query v5         | Server state caching                         | Cache API responses, auto-refetch เมื่อ invalidate, ลด API calls |
+| **Real-time**    | Socket.io client          | WebSocket listener                           | ฟังเหตุการณ์จาก server (task moved, notification) แบบ real-time   |
 
 **Flow:** User action → tRPC call → Prisma query → DB → Response → TanStack cache + Socket broadcast
 
@@ -81,16 +81,16 @@
 
 ### ⚙️ Backend Layer (Next.js Server)
 
-| Layer | Technology | Role | ทำหน้าที่ |
-|-------|-----------|------|----------|
-| **Server Runtime** | Node.js + tsx | JavaScript runtime | ประมวลผล API requests, database queries |
-| **Custom Server** | server.ts (tsx) | HTTP + Socket.io bridge | ทำให้ socket.io ทำงานกับ Next.js dev/prod |
-| **API Framework** | tRPC v11 | RPC + Type-safe endpoints | เรียก backend functions จาก frontend โดยได้ autocomplete + type checking |
-| **Input Validation** | Zod v4 | Schema validation | ตรวจสอบ input ต่อก่อนใช้ (ป้องกัน XSS, SQL injection) |
-| **Auth** | Better Auth v1 | Session management + OAuth | จัดการ login/register, session tokens, RBAC roles |
-| **Database ORM** | Prisma v7.8 | Type-safe DB layer | Query DB ด้วย API แบบ type-safe แทน raw SQL |
-| **Socket.io** | v4 | Real-time event broadcast | ส่ง events ไปยัง clients ในชุมชน (room) |
-| **Job Queue** | Bull/BullMQ (future) | Async tasks + cron | ตั้งเวลาสำหรับ deadline alerts (cron jobs) |
+| Layer                | Technology           | Role                       | ทำหน้าที่                                                                  |
+| -------------------- | -------------------- | -------------------------- | ---------------------------------------------------------------------- |
+| **Server Runtime**   | Node.js + tsx        | JavaScript runtime         | ประมวลผล API requests, database queries                                |
+| **Custom Server**    | server.ts (tsx)      | HTTP + Socket.io bridge    | ทำให้ socket.io ทำงานกับ Next.js dev/prod                                  |
+| **API Framework**    | tRPC v11             | RPC + Type-safe endpoints  | เรียก backend functions จาก frontend โดยได้ autocomplete + type checking |
+| **Input Validation** | Zod v4               | Schema validation          | ตรวจสอบ input ต่อก่อนใช้ (ป้องกัน XSS, SQL injection)                       |
+| **Auth**             | Better Auth v1       | Session management + OAuth | จัดการ login/register, session tokens, RBAC roles                       |
+| **Database ORM**     | Prisma v7.8          | Type-safe DB layer         | Query DB ด้วย API แบบ type-safe แทน raw SQL                             |
+| **Socket.io**        | v4                   | Real-time event broadcast  | ส่ง events ไปยัง clients ในชุมชน (room)                                   |
+| **Job Queue**        | Bull/BullMQ (future) | Async tasks + cron         | ตั้งเวลาสำหรับ deadline alerts (cron jobs)                                 |
 
 **Flow:** Request → Better Auth (middleware) → tRPC router → Zod validation → Prisma query → response → Socket broadcast
 
@@ -98,13 +98,13 @@
 
 ### 💾 Database Layer
 
-| Component | Technology | Role | ทำหน้าที่ |
-|-----------|-----------|------|----------|
-| **SQL Database** | PostgreSQL 17 | Primary data store | เก็บ workspace, projects, tasks, users, notifications |
-| **Connection Adapter** | @prisma/adapter-pg | Driver adapter (Prisma v7 pattern) | ต่อ PostgreSQL ผ่าน native pg driver |
-| **Schema** | Prisma Schema | Type-safe DB schema | Define tables, relations, indexes |
-| **Migrations** | Prisma Migrate | Version control for schema | Track schema changes, rollback ได้ |
-| **In-Memory Cache** | Redis 8 | Session + hot data cache | เก็บ session, cache project list, queue jobs |
+| Component              | Technology         | Role                               | ทำหน้าที่                                                |
+| ---------------------- | ------------------ | ---------------------------------- | ---------------------------------------------------- |
+| **SQL Database**       | PostgreSQL 17      | Primary data store                 | เก็บ workspace, projects, tasks, users, notifications |
+| **Connection Adapter** | @prisma/adapter-pg | Driver adapter (Prisma v7 pattern) | ต่อ PostgreSQL ผ่าน native pg driver                   |
+| **Schema**             | Prisma Schema      | Type-safe DB schema                | Define tables, relations, indexes                    |
+| **Migrations**         | Prisma Migrate     | Version control for schema         | Track schema changes, rollback ได้                    |
+| **In-Memory Cache**    | Redis 8            | Session + hot data cache           | เก็บ session, cache project list, queue jobs          |
 
 **Data Model:**
 ```
@@ -129,12 +129,12 @@ User (global auth)
 
 ### 🔌 Integration Layer (Glue between Frontend & Backend)
 
-| Component | Technology | Role | ทำหน้าที่ |
-|-----------|-----------|------|----------|
-| **API Protocol** | tRPC | End-to-end type safety | Frontend → Backend RPC calls w/ TypeScript inference |
-| **Query Client** | TanStack Query | Client-side caching | Cache GET results, invalidate on mutation |
-| **Realtime Hub** | Socket.io | WebSocket events | Broadcast changes: task:moved, task:created, notification:alert |
-| **Event Schema** | typed events (events.ts) | Type-safe event structure | Ensure payload matches expected shape |
+| Component        | Technology               | Role                      | ทำหน้าที่                                                           |
+| ---------------- | ------------------------ | ------------------------- | --------------------------------------------------------------- |
+| **API Protocol** | tRPC                     | End-to-end type safety    | Frontend → Backend RPC calls w/ TypeScript inference            |
+| **Query Client** | TanStack Query           | Client-side caching       | Cache GET results, invalidate on mutation                       |
+| **Realtime Hub** | Socket.io                | WebSocket events          | Broadcast changes: task:moved, task:created, notification:alert |
+| **Event Schema** | typed events (events.ts) | Type-safe event structure | Ensure payload matches expected shape                           |
 
 **Example Flow:**
 ```
@@ -155,13 +155,13 @@ Other clients: receive event + TanStack invalidate + re-render
 
 ### 🤖 AI Integration Layer
 
-| Component | Technology | Role | ทำหน้าที่ |
-|-----------|-----------|------|----------|
-| **AI Provider** | Anthropic Claude | LLM for chat | ตอบคำถาม, สรุป sprints, ให้คำแนะนำ |
-| **Model** | claude-sonnet-4-20250514 | Latest fast model | ประมวลผลข้อมูลโปรเจกต์ + user query |
-| **Context Builder** | context-builder.ts | Dynamic prompt injection | ดึง task, sprint, members จาก DB → สร้าง system prompt |
-| **Streaming** | Server-Sent Events (SSE) | Real-time response | ส่ง Claude output ทีละประโยค เนื่องจาก Claude ตอบช้า |
-| **Endpoint** | /api/ai/chat | Next.js route handler | รับ user message → call Claude → stream response |
+| Component           | Technology               | Role                     | ทำหน้าที่                                                |
+| ------------------- | ------------------------ | ------------------------ | ---------------------------------------------------- |
+| **AI Provider**     | Anthropic Claude         | LLM for chat             | ตอบคำถาม, สรุป sprints, ให้คำแนะนำ                        |
+| **Model**           | claude-sonnet-4-20250514 | Latest fast model        | ประมวลผลข้อมูลโปรเจกต์ + user query                     |
+| **Context Builder** | context-builder.ts       | Dynamic prompt injection | ดึง task, sprint, members จาก DB → สร้าง system prompt |
+| **Streaming**       | Server-Sent Events (SSE) | Real-time response       | ส่ง Claude output ทีละประโยค เนื่องจาก Claude ตอบช้า      |
+| **Endpoint**        | /api/ai/chat             | Next.js route handler    | รับ user message → call Claude → stream response      |
 
 **Flow:**
 ```
@@ -182,14 +182,14 @@ Client: ChatPanel receives chunks → append text real-time
 
 ### 🚀 Deployment & Infrastructure
 
-| Component | Technology | Role | ทำหน้าที่ |
-|-----------|-----------|------|----------|
-| **Frontend Hosting** | Vercel | Next.js deployment | Deploy frontend + API routes auto |
-| **Database** | Prisma Postgres or AWS RDS | Managed PostgreSQL | Backups, SSL, HA (high availability) |
-| **Caching** | Redis Cloud or Upstash | Managed Redis | Session store, job queue in production |
-| **Container** | Docker + Docker Compose | Local dev + production | Package app + dependencies, reproducible environment |
-| **CI/CD** | GitHub Actions | Automated testing + deployment | Run tests, lint, deploy on push to main |
-| **Monitoring** | Sentry + Datadog (future) | Error tracking + observability | Real-time alerts when errors occur |
+| Component            | Technology                 | Role                           | ทำหน้าที่                                                |
+| -------------------- | -------------------------- | ------------------------------ | ---------------------------------------------------- |
+| **Frontend Hosting** | Vercel                     | Next.js deployment             | Deploy frontend + API routes auto                    |
+| **Database**         | Prisma Postgres or AWS RDS | Managed PostgreSQL             | Backups, SSL, HA (high availability)                 |
+| **Caching**          | Redis Cloud or Upstash     | Managed Redis                  | Session store, job queue in production               |
+| **Container**        | Docker + Docker Compose    | Local dev + production         | Package app + dependencies, reproducible environment |
+| **CI/CD**            | GitHub Actions             | Automated testing + deployment | Run tests, lint, deploy on push to main              |
+| **Monitoring**       | Sentry + Datadog (future)  | Error tracking + observability | Real-time alerts when errors occur                   |
 
 ---
 
@@ -307,19 +307,19 @@ Client: ChatPanel receives chunks → append text real-time
 
 ## 🎯 Each Technology's Responsibility
 
-| Technology | ตัวอักษร | Responsibility | ไม่ทำ |
-|-----------|---------|-----------------|------|
-| **Next.js** | FE + BE | Render UI, API routes, SSR | Database operations (ให้ Prisma) |
-| **React** | FE | Component rendering, state | Network requests (ให้ tRPC) |
-| **TypeScript** | FE + BE | Type checking | Runtime validation (ให้ Zod) |
-| **Tailwind** | FE | CSS styling | HTML structure (ให้ React) |
-| **tRPC** | Bridge | RPC + type safety | Database queries (ให้ Prisma) |
-| **Prisma** | BE | ORM, query building | Raw SQL (use `.raw()` if needed) |
-| **PostgreSQL** | Data | Data persistence | Business logic (ให้ BE) |
-| **Redis** | Cache | Session, caching | Persistence (ให้ PG) |
-| **Socket.io** | RT | WebSocket events | Message reliability (ให้ DB activity log) |
-| **Better Auth** | Auth | Session, RBAC | Custom permissions (ให้ app) |
-| **Zod** | Validation | Input validation | Business rules (ให้ Prisma/BE) |
+| Technology      | ตัวอักษร     | Responsibility             | ไม่ทำ                                      |
+| --------------- | ---------- | -------------------------- | ---------------------------------------- |
+| **Next.js**     | FE + BE    | Render UI, API routes, SSR | Database operations (ให้ Prisma)          |
+| **React**       | FE         | Component rendering, state | Network requests (ให้ tRPC)               |
+| **TypeScript**  | FE + BE    | Type checking              | Runtime validation (ให้ Zod)              |
+| **Tailwind**    | FE         | CSS styling                | HTML structure (ให้ React)                |
+| **tRPC**        | Bridge     | RPC + type safety          | Database queries (ให้ Prisma)             |
+| **Prisma**      | BE         | ORM, query building        | Raw SQL (use `.raw()` if needed)         |
+| **PostgreSQL**  | Data       | Data persistence           | Business logic (ให้ BE)                   |
+| **Redis**       | Cache      | Session, caching           | Persistence (ให้ PG)                      |
+| **Socket.io**   | RT         | WebSocket events           | Message reliability (ให้ DB activity log) |
+| **Better Auth** | Auth       | Session, RBAC              | Custom permissions (ให้ app)              |
+| **Zod**         | Validation | Input validation           | Business rules (ให้ Prisma/BE)            |
 
 ---
 
@@ -354,14 +354,14 @@ Client: ChatPanel receives chunks → append text real-time
 
 ## 📈 Scalability Considerations
 
-| Concern | Current Status | Solution |
-|---------|----------------|----------|
-| **Concurrent Users** | 50 target | Connection pooling (PgBouncer), Redis session store |
-| **Task Volume** | Up to 1000 tasks/project | Database indexing, pagination (TanStack Virtual) |
-| **Real-time Events** | Socket.io broadcast | Room-based filtering (reduce payload) |
-| **Database Growth** | Retention policy needed | Archive old tasks, Activity log cleanup |
-| **File Storage** | Not yet implemented | S3/GCS for avatars, task attachments (future) |
-| **Geographic Distribution** | Single region | CDN for static assets (Vercel auto) |
+| Concern                     | Current Status           | Solution                                            |
+| --------------------------- | ------------------------ | --------------------------------------------------- |
+| **Concurrent Users**        | 50 target                | Connection pooling (PgBouncer), Redis session store |
+| **Task Volume**             | Up to 1000 tasks/project | Database indexing, pagination (TanStack Virtual)    |
+| **Real-time Events**        | Socket.io broadcast      | Room-based filtering (reduce payload)               |
+| **Database Growth**         | Retention policy needed  | Archive old tasks, Activity log cleanup             |
+| **File Storage**            | Not yet implemented      | S3/GCS for avatars, task attachments (future)       |
+| **Geographic Distribution** | Single region            | CDN for static assets (Vercel auto)                 |
 
 ---
 
@@ -452,14 +452,14 @@ lib/
 
 ## 🚨 Bottlenecks & Optimizations
 
-| Bottleneck | Why | Fix |
-|-----------|-----|-----|
-| **N+1 queries** | Load all tasks + assignees separately | Use `.include({ assignees: true })` in Prisma |
-| **Kanban render lag** | Re-render 1000 tasks on drag | Virtualize with TanStack Virtual |
-| **Socket.io broadcast** | Send huge payloads to all users | Room-based + compress payload |
-| **Session lookup** | Query DB every request | Redis session store (Better Auth feature) |
-| **AI response latency** | Claude takes 3-5 sec | Stream response (SSE) → show incrementally |
-| **Cold start (Vercel)** | Function warmup delay | Keep-alive pings, regional lambdas |
+| Bottleneck              | Why                                   | Fix                                           |
+| ----------------------- | ------------------------------------- | --------------------------------------------- |
+| **N+1 queries**         | Load all tasks + assignees separately | Use `.include({ assignees: true })` in Prisma |
+| **Kanban render lag**   | Re-render 1000 tasks on drag          | Virtualize with TanStack Virtual              |
+| **Socket.io broadcast** | Send huge payloads to all users       | Room-based + compress payload                 |
+| **Session lookup**      | Query DB every request                | Redis session store (Better Auth feature)     |
+| **AI response latency** | Claude takes 3-5 sec                  | Stream response (SSE) → show incrementally    |
+| **Cold start (Vercel)** | Function warmup delay                 | Keep-alive pings, regional lambdas            |
 
 ---
 

@@ -53,6 +53,10 @@ export const tasksRouter = router({
           where: { workspaceId: project.workspaceId, userId: { in: assigneeIds } },
           include: { jobRole: true },
         });
+        // Reject if any assignee is not a workspace member
+        if (memberJobRoles.length !== assigneeIds.length) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "One or more assignee IDs are invalid" });
+        }
         const roleMap = new Map(memberJobRoles.map((m) => [m.userId, m.jobRole?.name ?? null]));
         await ctx.prisma.taskAssignee.createMany({
           data: assigneeIds.map((userId) => ({

@@ -5,9 +5,10 @@ import { anthropic } from "@/lib/ai/client";
 import { buildProjectContext } from "@/lib/ai/context-builder";
 import { buildSystemPrompt } from "@/lib/ai/prompts";
 import { redis } from "@/lib/db/redis";
+import { prisma } from "@/lib/db/prisma";
 
-const RATE_LIMIT = 20; // requests per minute per user
-const RATE_WINDOW = 60; // seconds
+const RATE_LIMIT = 20;
+const RATE_WINDOW = 60;
 
 const BodySchema = z.object({
   projectId: z.string().min(1),
@@ -24,6 +25,29 @@ async function checkRateLimit(userId: string): Promise<boolean> {
   const count = await redis.incr(key);
   if (count === 1) await redis.expire(key, RATE_WINDOW);
   return count <= RATE_LIMIT;
+}
+
+async function userCanAccessProject(userId: string, projectId: string): Promise<boolean> {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { workspaceId: true, workspace: { select: { ownerId: true } } },
+  });
+  if (!project) return false;
+
+  // Workspace owner has full access
+  if (project.workspace.ownerId === userId) return true;
+
+  // Check workspace membership
+  const wsMember = await prisma.workspaceMember.findUnique({
+    where: { workspaceId_userId: { workspaceId: project.workspaceId, userId } },
+  });
+  if (!wsMember) return false;
+
+  // Check project membership
+  const pm = await prisma.projectMember.findUnique({
+    where: { projectId_userId: { projectId, userId } },
+  });
+  return !!pm;
 }
 
 export async function POST(req: NextRequest) {
@@ -44,6 +68,12 @@ export async function POST(req: NextRequest) {
   }
 
   const { projectId, messages } = parsed.data;
+
+  // Authorization: verify user has access to this project
+  const hasAccess = await userCanAccessProject(session.user.id, projectId);
+  if (!hasAccess) {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const context = await buildProjectContext(projectId);
   const systemPrompt = buildSystemPrompt(context);
@@ -71,9 +101,9 @@ export async function POST(req: NextRequest) {
         }
 
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "AI error";
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`));
+      } catch {
+        // Generic error — don't leak internals to client
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "An error occurred" })}\n\n`));
       } finally {
         controller.close();
       }

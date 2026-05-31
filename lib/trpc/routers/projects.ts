@@ -184,6 +184,8 @@ export const projectsRouter = router({
     .input(z.object({ id: z.string(), workspaceId: z.string(), data: ProjectInput.partial() }))
     .mutation(async ({ ctx, input }) => {
       await requireWorkspaceOwner(ctx.prisma, ctx.session.user.id, input.workspaceId);
+      const project = await ctx.prisma.project.findUnique({ where: { id: input.id }, select: { workspaceId: true } });
+      if (!project || project.workspaceId !== input.workspaceId) throw new TRPCError({ code: "FORBIDDEN" });
       return ctx.prisma.project.update({ where: { id: input.id }, data: input.data });
     }),
 
