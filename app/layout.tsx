@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import { TRPCReactProvider } from "@/lib/trpc/client";
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import "./globals.css";
@@ -29,8 +28,10 @@ const themeScript = `(function(){
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th" className={`${geistSans.variable} ${geistMono.variable} h-full`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="h-full antialiased">
-        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeScript }} />
         <TRPCReactProvider><ThemeProvider>{children}</ThemeProvider></TRPCReactProvider>
       </body>
     </html>

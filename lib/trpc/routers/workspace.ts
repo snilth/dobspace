@@ -7,14 +7,36 @@ export const workspaceRouter = router({
   // ─── Workspace CRUD ────────────────────────────────────────────────────────
 
   getCurrent: protectedProcedure.query(async ({ ctx }) => {
-    const member = await ctx.prisma.workspaceMember.findFirst({
+    let member = await ctx.prisma.workspaceMember.findFirst({
       where: { userId: ctx.session.user.id },
       include: {
         workspace: { include: { _count: { select: { members: true, projects: true } } } },
       },
       orderBy: { joinedAt: "asc" },
     });
-    if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "No workspace found" });
+
+    // Auto-heal: user exists but no workspace (e.g. registration hook failed)
+    if (!member) {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+        select: { name: true },
+      });
+      await ctx.prisma.workspace.create({
+        data: {
+          name: `${user?.name ?? "My"}'s Workspace`,
+          ownerId: ctx.session.user.id,
+          members: { create: { userId: ctx.session.user.id } },
+        },
+      });
+      member = await ctx.prisma.workspaceMember.findFirstOrThrow({
+        where: { userId: ctx.session.user.id },
+        include: {
+          workspace: { include: { _count: { select: { members: true, projects: true } } } },
+        },
+        orderBy: { joinedAt: "asc" },
+      });
+    }
+
     const isOwner = member.workspace.ownerId === ctx.session.user.id;
     return { workspace: member.workspace, isOwner };
   }),

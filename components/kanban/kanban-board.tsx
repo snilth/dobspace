@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
   type DragStartEvent, type DragEndEvent, closestCorners, useDroppable,
@@ -9,7 +9,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Plus, Eye } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
-import { useSocket, useSocketEvent } from "@/hooks/use-socket";
+import { usePusherEvent } from "@/hooks/use-pusher";
 import { cn } from "@/lib/utils";
 import { TaskCard } from "./task-card";
 import { CreateTaskDialog } from "./create-task-dialog";
@@ -134,23 +134,17 @@ export function KanbanBoard({ initialTasks, projectId, workspaceId = "", current
     return true;
   }
 
-  const socket = useSocket();
   const trpc = useTRPC();
   const moveTask = useMutation(trpc.tasks.move.mutationOptions());
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const channel = `project-${projectId}`;
 
-  useEffect(() => {
-    socket?.emit("join:project", projectId);
-  }, [socket, projectId]);
-
-  // task:moved — patch status
-  useSocketEvent("task:moved", useCallback((payload: TaskMovedPayload) => {
+  usePusherEvent(channel, "task:moved", useCallback((payload: TaskMovedPayload) => {
     if (payload.changedBy === currentUserId) return;
     setTasks((prev) => prev.map((t) => t.id === payload.taskId ? { ...t, status: payload.status } : t));
   }, [currentUserId]));
 
-  // task:created — add to board
-  useSocketEvent("task:created", useCallback((payload: TaskCreatedPayload) => {
+  usePusherEvent(channel, "task:created", useCallback((payload: TaskCreatedPayload) => {
     if (payload.changedBy === currentUserId) return;
     setTasks((prev) => [...prev, {
       id: payload.taskId,
@@ -162,10 +156,9 @@ export function KanbanBoard({ initialTasks, projectId, workspaceId = "", current
       assignee: payload.assignee,
       dueDate: payload.dueDate,
     }]);
-  }, [currentUserId]));
+  }, [currentUserId, projectId]));
 
-  // task:updated — patch fields
-  useSocketEvent("task:updated", useCallback((payload: TaskUpdatedPayload) => {
+  usePusherEvent(channel, "task:updated", useCallback((payload: TaskUpdatedPayload) => {
     if (payload.changedBy === currentUserId) return;
     setTasks((prev) => prev.map((t) => t.id === payload.taskId ? {
       ...t,
@@ -178,8 +171,7 @@ export function KanbanBoard({ initialTasks, projectId, workspaceId = "", current
     } : t));
   }, [currentUserId]));
 
-  // task:deleted — remove from board
-  useSocketEvent("task:deleted", useCallback((payload: TaskDeletedPayload) => {
+  usePusherEvent(channel, "task:deleted", useCallback((payload: TaskDeletedPayload) => {
     if (payload.changedBy === currentUserId) return;
     setTasks((prev) => prev.filter((t) => t.id !== payload.taskId));
   }, [currentUserId]));

@@ -1,7 +1,6 @@
 import { createServer } from "node:http";
 import { parse } from "node:url";
 import next from "next";
-import { initSocketServer } from "./lib/socket/server";
 import * as dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
@@ -19,9 +18,7 @@ app.prepare().then(() => {
     await handle(req, res, parsedUrl);
   });
 
-  initSocketServer(httpServer);
-
   httpServer.listen(port, hostname, () => {
-    console.log(`▲ DevMind ready on http://${hostname}:${port}`);
+    console.log(`▲ DobSpace ready on http://${hostname}:${port}`);
   });
 });

@@ -3,7 +3,7 @@ import { router, protectedProcedure } from "@/lib/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { TaskStatus, Priority, Prisma } from "@prisma/client";
 import { requireProjectPermission } from "@/lib/trpc/guards";
-import { emitToProject } from "@/lib/socket/server";
+import { emitToProject, emitToUser } from "@/lib/socket/server";
 
 const TaskInput = z.object({
   title: z.string().min(1).max(500),
@@ -242,7 +242,7 @@ export const tasksRouter = router({
             message: `${assigner?.name ?? "ไม่ทราบชื่อ"} มอบหมาย "${task.title}" ให้คุณ ใน ${project?.name ?? "project"}`,
           },
         });
-        (global as any).__socketIo?.to(`user:${input.userId}`).emit("notification:new", {
+        emitToUser(input.userId, "notification:new", {
           id: notif.id,
           type: notif.type,
           message: notif.message,
@@ -296,7 +296,7 @@ export const tasksRouter = router({
             message: `${remover?.name ?? "ไม่ทราบชื่อ"} ยกเลิกการมอบหมาย "${task.title}" ใน ${project?.name ?? "project"}`,
           },
         });
-        (global as any).__socketIo?.to(`user:${input.userId}`).emit("notification:new", {
+        emitToUser(input.userId, "notification:new", {
           id: notif.id, type: notif.type, message: notif.message,
           taskId: notif.taskId, createdAt: notif.createdAt,
         });
@@ -371,7 +371,7 @@ export const tasksRouter = router({
         const notif = await ctx.prisma.notification.create({
           data: { userId, taskId: input.id, type: "TASK_MOVED", message: `${approver?.name} อนุมัติ "${task.title}" ใน ${project?.name} แล้ว ✅` },
         });
-        (global as any).__socketIo?.to(`user:${userId}`).emit("notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+        emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
       }
       return updated;
     }),
@@ -402,7 +402,7 @@ export const tasksRouter = router({
         const notif = await ctx.prisma.notification.create({
           data: { userId, taskId: input.id, type: "TASK_MOVED", message: `${reviewer?.name} ส่ง "${task.title}" กลับ Backlog ❌ — ${input.reason}` },
         });
-        (global as any).__socketIo?.to(`user:${userId}`).emit("notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+        emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
       }
       return updated;
     }),
