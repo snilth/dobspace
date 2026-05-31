@@ -1,15 +1,12 @@
-import { createClient } from "redis";
+import { Redis } from "@upstash/redis";
 
-const globalForRedis = globalThis as unknown as { redis: ReturnType<typeof createClient> };
+const globalForRedis = globalThis as unknown as { redis: Redis };
 
 export const redis =
   globalForRedis.redis ??
-  createClient({ url: process.env.REDIS_URL ?? "redis://localhost:6379" });
+  new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL ?? "",
+    token: process.env.UPSTASH_REDIS_REST_TOKEN ?? "",
+  });
 
 if (process.env.NODE_ENV !== "production") globalForRedis.redis = redis;
-
-redis.on("error", (err) => console.error("Redis error:", err));
-
-if (!redis.isOpen) {
-  redis.connect().catch(console.error);
-}
