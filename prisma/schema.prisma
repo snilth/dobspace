@@ -1,0 +1,318 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Better Auth required models ─────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions             Session[]
+  accounts             Account[]
+  ownedWorkspaces      Workspace[]              @relation("WorkspaceOwner")
+  workspaceMembers     WorkspaceMember[]
+  projectMemberships   ProjectMember[]
+  taskAssignments      TaskAssignee[]           @relation("AssignedUser")
+  taskAssignedBy       TaskAssignee[]           @relation("AssignedByUser")
+  notifications        Notification[]
+  notificationPrefs    NotificationPreference[]
+  activityLogs         ActivityLog[]
+  createdJobRoles      JobRole[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ─── App models ───────────────────────────────────────────────────────────────
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner             User                   @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members           WorkspaceMember[]
+  projects          Project[]
+  jobRoles          JobRole[]
+  activityLogs      ActivityLog[]
+  notificationPrefs NotificationPreference[]
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  jobRoleId   String?
+  joinedAt    DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobRole   JobRole?  @relation(fields: [jobRoleId], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+}
+
+model JobRole {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+  color       String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator   User            @relation(fields: [createdBy], references: [id])
+  members   WorkspaceMember[]
+
+  @@unique([workspaceId, name])
+}
+
+
+model Project {
+  id          String        @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  joinCode    String?       @unique
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sprints   Sprint[]
+  tasks     Task[]
+  members   ProjectMember[]
+}
+
+model ProjectMember {
+  id         String            @id @default(cuid())
+  projectId  String
+  userId     String
+  permission ProjectPermission @default(VIEWER)
+  tag        String?
+  joinedAt   DateTime          @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+}
+
+enum ProjectPermission {
+  VIEWER
+  EDITOR
+  MANAGER
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model Sprint {
+  id        String       @id @default(cuid())
+  projectId String
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  status    SprintStatus @default(PLANNING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+}
+
+enum SprintStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  projectId   String
+  sprintId    String?
+  title       String     @db.VarChar(500)
+  description String?
+  status      TaskStatus @default(BACKLOG)
+  priority    Priority   @default(MEDIUM)
+  dueDate     DateTime?
+  tags        String[]
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sprint        Sprint?        @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  assignees     TaskAssignee[]
+  notifications Notification[]
+
+  @@index([projectId, dueDate])
+}
+
+enum TaskStatus {
+  BACKLOG
+  IN_PROGRESS
+  REVIEW
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model TaskAssignee {
+  id         String   @id @default(cuid())
+  taskId     String
+  userId     String
+  jobRole    String?
+  assignedBy String
+  assignedAt DateTime @default(now())
+
+  task           Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user           User @relation("AssignedUser", fields: [userId], references: [id], onDelete: Cascade)
+  assignedByUser User @relation("AssignedByUser", fields: [assignedBy], references: [id])
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+}
+
+model ActivityLog {
+  id          String         @id @default(cuid())
+  workspaceId String
+  entityType  EntityType
+  entityId    String
+  action      ActivityAction
+  userId      String
+  changes     Json?
+  createdAt   DateTime       @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@index([workspaceId, entityType, entityId])
+  @@index([userId])
+}
+
+enum EntityType {
+  TASK
+  SPRINT
+  PROJECT
+  MEMBER
+}
+
+enum ActivityAction {
+  CREATED
+  UPDATED
+  DELETED
+  ASSIGNED
+  UNASSIGNED
+  MOVED
+  COMMENTED
+  ROLE_ASSIGNED
+  MEMBER_JOINED
+  MEMBER_REMOVED
+  DEADLINE_ALERT
+}
+
+model NotificationPreference {
+  id                  String   @id @default(cuid())
+  userId              String
+  workspaceId         String
+  eventTypes          Json
+  deadlineApproaching Json
+  deadlineOverdue     Json
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([userId, workspaceId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  taskId    String?
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_COMMENTED
+  SPRINT_STARTED
+  TASK_MOVED
+  DEADLINE_APPROACHING
+  DEADLINE_OVERDUE
+  ROLE_CHANGED
+  MEMBER_JOINED
+}

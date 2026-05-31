@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Brand — vibrant indigo-violet */
+  --color-brand: oklch(57% 0.245 278);
+  --color-brand-light: oklch(68% 0.19 278);
+  --color-brand-dark: oklch(46% 0.245 278);
+  --color-brand-foreground: oklch(99% 0.005 278);
+  --color-brand-subtle: oklch(95.5% 0.035 278);
+  --color-brand-muted: oklch(88% 0.09 278);
+
+  /* Sidebar — deep slate */
+  --color-sidebar: oklch(13% 0.016 258);
+  --color-sidebar-surface: oklch(17% 0.02 258);
+  --color-sidebar-foreground: oklch(86% 0.01 258);
+  --color-sidebar-muted: oklch(48% 0.01 258);
+  --color-sidebar-border: oklch(20% 0.016 258);
+  --color-sidebar-hover: oklch(20% 0.02 258);
+  --color-sidebar-active: oklch(24% 0.055 278);
+  --color-sidebar-active-text: oklch(80% 0.12 278);
+
+  /* Surfaces */
+  --color-surface: oklch(99% 0.003 258);
+  --color-surface-2: oklch(97% 0.004 258);
+  --color-surface-3: oklch(94.5% 0.005 258);
+  --color-card: oklch(100% 0 0);
+
+  /* Borders */
+  --color-border: oklch(91.5% 0.005 258);
+  --color-border-strong: oklch(84% 0.007 258);
+
+  /* Text */
+  --color-foreground: oklch(12% 0.02 258);
+  --color-foreground-2: oklch(33% 0.014 258);
+  --color-muted: oklch(54% 0.009 258);
+  --color-muted-2: oklch(67% 0.006 258);
+
+  /* Status */
+  --color-status-backlog: oklch(60% 0.009 258);
+  --color-status-progress: oklch(57% 0.21 228);
+  --color-status-review: oklch(61% 0.21 55);
+  --color-status-done: oklch(57% 0.2 148);
+
+  /* Priority */
+  --color-priority-low: oklch(57% 0.18 148);
+  --color-priority-medium: oklch(61% 0.19 55);
+  --color-priority-high: oklch(54% 0.23 27);
+
+  /* Semantic */
+  --color-error: oklch(54% 0.23 27);
+  --color-success: oklch(57% 0.2 148);
+
+  --radius-card: 12px;
+  --radius-btn: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}
+
+/* ─── Dark mode overrides ──────────────────────────────────────────────────── */
+/* :root.dark has specificity (0,2,0) — beats Tailwind's :root (0,1,0) */
+
+:root.dark {
+  --background: oklch(16% 0.012 258);
+  --foreground: oklch(93% 0.007 258);
+
+  --color-surface: oklch(18% 0.014 258);
+  --color-surface-2: oklch(21% 0.016 258);
+  --color-surface-3: oklch(25% 0.018 258);
+  --color-card: oklch(20% 0.016 258);
+
+  --color-border: oklch(30% 0.016 258);
+  --color-border-strong: oklch(40% 0.018 258);
+
+  --color-foreground: oklch(93% 0.007 258);
+  --color-foreground-2: oklch(72% 0.008 258);
+  --color-muted: oklch(54% 0.009 258);
+  --color-muted-2: oklch(40% 0.007 258);
+
+  --color-brand-subtle: oklch(22% 0.055 278);
+  --color-brand-muted: oklch(33% 0.08 278);
+
+  --color-sidebar: oklch(13% 0.012 258);
+  --color-sidebar-surface: oklch(16% 0.015 258);
+  --color-sidebar-border: oklch(20% 0.013 258);
+  --color-sidebar-hover: oklch(19% 0.016 258);
+}
+
+/* ─── Accent color overrides ───────────────────────────────────────────────── */
+
+:root[data-accent="yellow"] {
+  --color-brand: oklch(72% 0.18 88);
+  --color-brand-light: oklch(82% 0.15 88);
+  --color-brand-dark: oklch(60% 0.18 88);
+  --color-brand-foreground: oklch(99% 0.005 88);
+  --color-brand-subtle: oklch(96% 0.05 88);
+  --color-brand-muted: oklch(89% 0.1 88);
+  --color-sidebar-active: oklch(24% 0.04 88);
+  --color-sidebar-active-text: oklch(82% 0.14 88);
+}
+:root.dark[data-accent="yellow"] {
+  --color-brand-subtle: oklch(22% 0.05 88);
+  --color-brand-muted: oklch(32% 0.09 88);
+}
+
+:root[data-accent="blue"] {
+  --color-brand: oklch(55% 0.22 228);
+  --color-brand-light: oklch(67% 0.17 228);
+  --color-brand-dark: oklch(44% 0.22 228);
+  --color-brand-foreground: oklch(99% 0.005 228);
+  --color-brand-subtle: oklch(95.5% 0.03 228);
+  --color-brand-muted: oklch(88% 0.08 228);
+  --color-sidebar-active: oklch(24% 0.05 228);
+  --color-sidebar-active-text: oklch(78% 0.12 228);
+}
+:root.dark[data-accent="blue"] {
+  --color-brand-subtle: oklch(20% 0.05 228);
+  --color-brand-muted: oklch(30% 0.08 228);
+}
+
+:root[data-accent="pink"] {
+  --color-brand: oklch(57% 0.22 345);
+  --color-brand-light: oklch(68% 0.17 345);
+  --color-brand-dark: oklch(46% 0.22 345);
+  --color-brand-foreground: oklch(99% 0.005 345);
+  --color-brand-subtle: oklch(96% 0.03 345);
+  --color-brand-muted: oklch(89% 0.08 345);
+  --color-sidebar-active: oklch(22% 0.055 345);
+  --color-sidebar-active-text: oklch(78% 0.12 345);
+}
+:root.dark[data-accent="pink"] {
+  --color-brand-subtle: oklch(20% 0.055 345);
+  --color-brand-muted: oklch(30% 0.08 345);
+}
+
+:root[data-accent="green"] {
+  --color-brand: oklch(52% 0.19 148);
+  --color-brand-light: oklch(63% 0.16 148);
+  --color-brand-dark: oklch(42% 0.19 148);
+  --color-brand-foreground: oklch(99% 0.005 148);
+  --color-brand-subtle: oklch(95% 0.03 148);
+  --color-brand-muted: oklch(87% 0.07 148);
+  --color-sidebar-active: oklch(22% 0.05 148);
+  --color-sidebar-active-text: oklch(73% 0.13 148);
+}
+:root.dark[data-accent="green"] {
+  --color-brand-subtle: oklch(20% 0.05 148);
+  --color-brand-muted: oklch(30% 0.08 148);
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
+
+:root {
+  --background: oklch(99% 0.003 258);
+  --foreground: oklch(12% 0.02 258);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(84% 0.007 258);
+  border-radius: 99px;
+}
+:root.dark ::-webkit-scrollbar-thumb {
+  background: oklch(30% 0.01 258);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(73% 0.009 258);
+}
