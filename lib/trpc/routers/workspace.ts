@@ -7,7 +7,17 @@ export const workspaceRouter = router({
   // ─── Workspace CRUD ────────────────────────────────────────────────────────
 
   getCurrent: protectedProcedure.query(async ({ ctx }) => {
+    // Prefer the workspace the user owns — never return someone else's workspace as "current"
     let member = await ctx.prisma.workspaceMember.findFirst({
+      where: { userId: ctx.session.user.id, workspace: { ownerId: ctx.session.user.id } },
+      include: {
+        workspace: { include: { _count: { select: { members: true, projects: true } } } },
+      },
+      orderBy: { joinedAt: "asc" },
+    });
+
+    // Fallback: any workspace (joined via invite code)
+    if (!member) member = await ctx.prisma.workspaceMember.findFirst({
       where: { userId: ctx.session.user.id },
       include: {
         workspace: { include: { _count: { select: { members: true, projects: true } } } },
