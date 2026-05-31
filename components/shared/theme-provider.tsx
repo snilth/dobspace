@@ -11,6 +11,8 @@ type ThemeContextValue = {
   setTheme: (t: Theme) => void;
   accent: Accent;
   setAccent: (a: Accent) => void;
+  sidebarSticky: boolean;
+  setSidebarSticky: (v: boolean) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue>({
@@ -19,6 +21,8 @@ const ThemeContext = createContext<ThemeContextValue>({
   setTheme: () => {},
   accent: "indigo",
   setAccent: () => {},
+  sidebarSticky: false,
+  setSidebarSticky: () => {},
 });
 
 export function useTheme() {
@@ -29,6 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("system");
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
   const [accent, setAccentState] = useState<Accent>("indigo");
+  const [sidebarSticky, setSidebarStickyState] = useState(false);
 
   useEffect(() => {
     const stored = (localStorage.getItem("theme") as Theme) ?? "system";
@@ -41,6 +46,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (!VALID.includes(raw)) localStorage.setItem("accent", "indigo");
     setAccentState(storedAccent);
     applyAccent(storedAccent);
+
+    setSidebarStickyState(localStorage.getItem("sidebar-sticky") === "true");
   }, []);
 
   function applyTheme(t: Theme) {
@@ -71,6 +78,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyAccent(a);
   }
 
+  function setSidebarSticky(v: boolean) {
+    setSidebarStickyState(v);
+    localStorage.setItem("sidebar-sticky", String(v));
+  }
+
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = () => { if (theme === "system") applyTheme("system"); };
@@ -79,7 +91,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, accent, setAccent }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, accent, setAccent, sidebarSticky, setSidebarSticky }}>
       {children}
     </ThemeContext.Provider>
   );

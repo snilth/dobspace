@@ -10,7 +10,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: "DobSpace",
   description: "Kanban board with AI assistant for dev teams",
-  icons: { icon: "/black-cat.svg", shortcut: "/black-cat.svg", apple: "/black-cat.svg" },
+  icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
 };
 
 const themeScript = `(function(){

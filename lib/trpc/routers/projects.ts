@@ -8,6 +8,7 @@ import { randomBytes } from "crypto";
 const ProjectInput = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(500).optional(),
+  image: z.string().nullable().optional(),
 });
 
 async function isWorkspaceOwner(prisma: PrismaClient, userId: string, workspaceId: string) {
@@ -57,6 +58,32 @@ export const projectsRouter = router({
     return results.flat();
   }),
 
+  listAllFull: protectedProcedure.query(async ({ ctx }) => {
+    const memberships = await ctx.prisma.workspaceMember.findMany({
+      where: { userId: ctx.session.user.id },
+      select: { workspaceId: true, workspace: { select: { ownerId: true } } },
+    });
+
+    const results = await Promise.all(
+      memberships.map(async ({ workspaceId, workspace }) => {
+        const isOwner = workspace.ownerId === ctx.session.user.id;
+        const where = isOwner
+          ? { workspaceId, status: "ACTIVE" as const }
+          : { workspaceId, status: "ACTIVE" as const, members: { some: { userId: ctx.session.user.id } } };
+
+        const projects = await ctx.prisma.project.findMany({
+          where,
+          include: { _count: { select: { tasks: true } }, sprints: { where: { status: "ACTIVE" }, take: 1 } },
+          orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        });
+
+        return projects.map((p) => ({ ...p, isOwned: isOwner }));
+      })
+    );
+
+    return results.flat();
+  }),
+
   list: protectedProcedure
     .input(z.object({ workspaceId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -98,9 +125,8 @@ export const projectsRouter = router({
 
       const isManager = owner || pm?.permission === "MANAGER";
 
-      const taskWhere = isManager
-        ? { projectId: input.id }
-        : { projectId: input.id, assignees: { some: { userId: ctx.session.user.id } } };
+      // VIEWER and EDITOR see all tasks — permission controls what actions they can take, not visibility
+      const taskWhere = { projectId: input.id };
 
       const project = await ctx.prisma.project.findFirst({
         where: { id: input.id, workspaceId },

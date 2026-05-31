@@ -156,6 +156,12 @@
   --foreground: oklch(12% 0.02 258);
 }
 
+@layer utilities {
+  aside.sidebar-sticky .opacity-0 {
+    opacity: 1;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

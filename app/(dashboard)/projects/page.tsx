@@ -4,7 +4,7 @@ import { ProjectsList } from "./projects-list";
 export default async function ProjectsPage() {
   const trpc = await createServerCaller();
   const { workspace, isOwner } = await trpc.workspace.getCurrent();
-  const projects = await trpc.projects.list({ workspaceId: workspace.id });
+  const projects = await trpc.projects.listAllFull();
 
   return (
     <ProjectsList

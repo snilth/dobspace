@@ -9,7 +9,7 @@ import { Section, Field, SaveButton, ErrorMsg } from "./account-section";
 
 const PERM_STYLE: Record<string, string> = {
   VIEWER: "text-muted border-border",
-  EDITOR: "text-[oklch(42%_0.18_228)] border-[oklch(85%_0.08_228)]",
+  EDITOR: "text-[oklch(42%_0.18_228)] border-[oklch(85%_0.08_228)] dark:text-[oklch(68%_0.17_228)] dark:border-[oklch(40%_0.12_228)]",
   MANAGER: "text-brand border-brand-muted",
 };
 const PERM_LABEL: Record<string, string> = { VIEWER: "View", EDITOR: "Edit", MANAGER: "Manage" };
@@ -17,7 +17,7 @@ const PERM_LABEL: Record<string, string> = { VIEWER: "View", EDITOR: "Edit", MAN
 type Member = {
   id: string;
   userId: string;
-  user: { id: string; name: string; email: string };
+  user: { id: string; name: string; email: string; image?: string | null };
   projects: { id: string; name: string; permission: string }[];
 };
 
@@ -74,12 +74,12 @@ export function WorkspaceSection({ workspaceId, workspaceName, isOwner, members,
       {/* Members overview */}
       <div>
         <p className="text-xs font-semibold text-foreground-2 mb-3">
-          Members ({members.length})
+          Members ({members.filter(m => m.userId !== currentUserId).length})
           {isOwner && <span className="font-normal text-muted ml-1">· Invite via project join code</span>}
         </p>
 
         <div className="space-y-2">
-          {members.map((m) => {
+          {members.filter(m => m.userId !== currentUserId).map((m) => {
             const isSelf = m.userId === currentUserId;
             const isThisOwner = m.userId === currentUserId && isOwner;
             const canRemove = isOwner && !isSelf;
@@ -87,10 +87,10 @@ export function WorkspaceSection({ workspaceId, workspaceName, isOwner, members,
             return (
               <div key={m.id} className="p-3 rounded-[10px] border border-border bg-card hover:bg-surface-2 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0">
-                    <span className="text-[11px] font-bold text-brand">
-                      {m.user.name.slice(0, 2).toUpperCase()}
-                    </span>
+                  <div className="w-8 h-8 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {m.user.image
+                      ? <img src={m.user.image} alt={m.user.name} className="w-full h-full object-cover" />
+                      : <span className="text-[11px] font-bold text-brand">{m.user.name.slice(0, 2).toUpperCase()}</span>}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-medium text-foreground leading-none mb-0.5 truncate">

@@ -21,7 +21,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     notFound();
   }
 
-  const { isOwner } = await trpc.workspace.getCurrent();
+  const { isOwner, workspace } = await trpc.workspace.getCurrent();
 
   const currentUserProjectPermission = isOwner
     ? "MANAGER"
@@ -72,6 +72,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             projectName={project.name}
             joinCode={project.joinCode}
             canManage={canManage}
+            currentUserId={session?.user.id ?? ""}
+            workspaceOwnerId={workspace.ownerId}
           />
         </div>
       </div>

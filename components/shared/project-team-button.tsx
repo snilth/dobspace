@@ -11,9 +11,11 @@ type Props = {
   projectName: string;
   joinCode?: string | null;
   canManage?: boolean;
+  currentUserId?: string;
+  workspaceOwnerId?: string;
 };
 
-export function ProjectTeamButton({ workspaceId, workspaceName, projectId, projectName, joinCode, canManage }: Props) {
+export function ProjectTeamButton({ workspaceId, workspaceName, projectId, projectName, joinCode, canManage, currentUserId, workspaceOwnerId }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -33,6 +35,8 @@ export function ProjectTeamButton({ workspaceId, workspaceName, projectId, proje
           projectName={projectName}
           initialJoinCode={joinCode}
           canManage={canManage}
+          currentUserId={currentUserId}
+          workspaceOwnerId={workspaceOwnerId}
           onClose={() => setOpen(false)}
         />
       )}

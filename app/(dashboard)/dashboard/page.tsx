@@ -102,8 +102,10 @@ export default async function DashboardPage() {
                     <div key={w.name}>
                       <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0">
-                            <span className="text-[9px] font-bold text-brand">{w.name.slice(0, 2).toUpperCase()}</span>
+                          <div className="w-6 h-6 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {w.image
+                              ? <img src={w.image} alt={w.name} className="w-full h-full object-cover" />
+                              : <span className="text-[9px] font-bold text-brand">{w.name.slice(0, 2).toUpperCase()}</span>}
                           </div>
                           <span className="text-[12px] font-medium text-foreground">{w.name}</span>
                         </div>
@@ -120,41 +122,45 @@ export default async function DashboardPage() {
           )}
 
           <Card title={`Team (${members.length})`} icon={<Users className="w-3.5 h-3.5" />}>
-            <div className="space-y-2">
+            <div className="divide-y divide-border">
               {members.map((m) => {
                 const isMe = m.userId === session?.user.id;
                 const isMemberOwner = m.userId === workspace.ownerId;
                 return (
-                  <div key={m.id} className="p-2.5 rounded-[10px] hover:bg-surface-2 transition-colors">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0">
-                        <span className="text-[10px] font-bold text-brand">{m.user.name.slice(0, 2).toUpperCase()}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className="text-[12px] font-semibold text-foreground leading-none">{m.user.name}</p>
-                          {isMe && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-brand-subtle text-brand border border-brand-muted leading-none">
-                              you
-                            </span>
-                          )}
-                          {isMemberOwner && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[oklch(95%_0.05_278)] text-[oklch(42%_0.2_278)] border border-[oklch(85%_0.08_278)] leading-none">
-                              owner
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                  <div key={m.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+                    {/* Avatar */}
+                    <div className="w-9 h-9 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
+                      {m.user.image
+                        ? <img src={m.user.image} alt={m.user.name} className="w-full h-full object-cover" />
+                        : <span className="text-[11px] font-bold text-brand">{m.user.name.slice(0, 2).toUpperCase()}</span>}
                     </div>
-                    <div className="mt-1.5 ml-9">
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      {/* Name + badges */}
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <p className="text-[13px] font-semibold text-foreground truncate">{m.user.name}</p>
+                        {isMe && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-brand-subtle text-brand border border-brand-muted shrink-0">
+                            you
+                          </span>
+                        )}
+                        {isMemberOwner && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[oklch(95%_0.05_278)] text-[oklch(42%_0.2_278)] border border-[oklch(85%_0.08_278)] shrink-0 dark:bg-[oklch(22%_0.05_278)] dark:text-[oklch(72%_0.15_278)] dark:border-[oklch(32%_0.08_278)]">
+                            owner
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Projects */}
                       {m.projects.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5">
                           {m.projects.map((p) => (
                             <Link key={p.id} href={`/projects/${p.id}`}
-                              className="flex items-center gap-1 text-[10px] text-muted hover:text-brand transition-colors group/proj">
-                              <span className="group-hover/proj:text-brand">{p.name}</span>
+                              className="flex items-center gap-1 px-2 py-1 rounded-[6px] bg-surface-2 hover:bg-brand-subtle hover:text-brand border border-border hover:border-brand-muted transition-colors group/proj">
+                              <span className="text-[11px] font-medium text-foreground-2 group-hover/proj:text-brand truncate max-w-[90px]">{p.name}</span>
                               {p.tag && (
-                                <span className="px-1.5 py-0.5 rounded-md bg-brand-subtle text-brand border border-brand-muted font-semibold leading-none">
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-brand text-brand-foreground shrink-0">
                                   {p.tag}
                                 </span>
                               )}
@@ -162,7 +168,7 @@ export default async function DashboardPage() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-[10px] text-muted-2 italic">Not in any project</p>
+                        <p className="text-[11px] text-muted-2 italic">Not in any project</p>
                       )}
                     </div>
                   </div>

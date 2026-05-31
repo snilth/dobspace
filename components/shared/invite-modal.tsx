@@ -8,13 +8,13 @@ import { cn } from "@/lib/utils";
 
 const PERM_LABEL: Record<string, string> = { VIEWER: "View only", EDITOR: "Can edit", MANAGER: "Can manage" };
 const PERM_DESC: Record<string, string> = {
-  VIEWER: "Read only",
-  EDITOR: "Create / edit / delete tasks",
-  MANAGER: "Everything + assign tasks",
+  VIEWER: "Can view tasks only, no changes",
+  EDITOR: "Can create, edit, and delete tasks",
+  MANAGER: "Can do everything + assign people to tasks",
 };
 const PERM_STYLE: Record<string, string> = {
   VIEWER: "text-muted border-border",
-  EDITOR: "text-[oklch(42%_0.18_228)] border-[oklch(85%_0.08_228)]",
+  EDITOR: "text-[oklch(42%_0.18_228)] border-[oklch(85%_0.08_228)] dark:text-[oklch(68%_0.17_228)] dark:border-[oklch(30%_0.08_228)]",
   MANAGER: "text-brand border-brand-muted",
 };
 
@@ -24,12 +24,13 @@ type Props = {
   projectId: string;
   projectName: string;
   initialJoinCode?: string | null;
-  /** Only workspace owner gets full management UI */
   canManage?: boolean;
+  currentUserId?: string;
+  workspaceOwnerId?: string;
   onClose: () => void;
 };
 
-export function InviteModal({ workspaceId, projectId, projectName, initialJoinCode, canManage, onClose }: Props) {
+export function InviteModal({ workspaceId, projectId, projectName, initialJoinCode, canManage, currentUserId, workspaceOwnerId, onClose }: Props) {
   const [joinCode, setJoinCode] = useState<string | null>(initialJoinCode ?? null);
   const [copied, setCopied] = useState(false);
   const trpc = useTRPC();
@@ -107,7 +108,7 @@ export function InviteModal({ workspaceId, projectId, projectName, initialJoinCo
           {canManage && (
             <div>
               <p className="text-xs font-semibold text-foreground-2 mb-1.5">Invite Code</p>
-              <p className="text-[11px] text-muted mb-3">Share this code → Dashboard → "Join by Code"</p>
+              <p className="text-[11px] text-muted mb-3">Share this code → Projects → "Join by Code"</p>
               {joinCode ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 p-3 bg-surface-2 rounded-[10px] border border-border">
@@ -145,7 +146,7 @@ export function InviteModal({ workspaceId, projectId, projectName, initialJoinCo
               <div className="space-y-1">
                 {addableMembers.map((m) => (
                   <div key={m.id} className="flex items-center gap-3 px-3 py-2 rounded-[8px] hover:bg-surface-2 transition-colors">
-                    <MemberAvatar name={m.user.name} />
+                    <MemberAvatar name={m.user.name} image={m.user.image} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] font-medium text-foreground truncate">{m.user.name}</p>
                       <p className="text-[10px] text-muted truncate">{m.user.email}</p>
@@ -174,45 +175,69 @@ export function InviteModal({ workspaceId, projectId, projectName, initialJoinCo
               ) : projectMembers.length === 0 ? (
                 <p className="text-[12px] text-muted text-center py-4">No members yet</p>
               ) : (
-                projectMembers.map((m) => (
-                  <div key={m.id} className="flex items-center gap-3 px-3 py-2.5 rounded-[8px] hover:bg-surface-2 transition-colors">
-                    <MemberAvatar name={m.user.name} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-[12px] font-medium text-foreground truncate">{m.user.name}</p>
-                        {canManage ? (
-                          <TagInput
-                            value={m.tag ?? ""}
-                            onChange={(tag) => updateTag.mutate({ projectId, workspaceId, userId: m.user.id, tag: tag || null })}
-                          />
-                        ) : m.tag ? (
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-brand-subtle text-brand border border-brand-muted">
-                            {m.tag}
-                          </span>
-                        ) : null}
+                [...projectMembers].sort((a, b) => {
+                  if (a.user.id === workspaceOwnerId) return -1;
+                  if (b.user.id === workspaceOwnerId) return 1;
+                  return 0;
+                }).map((m) => {
+                  const isProjectOwner = m.user.id === workspaceOwnerId;
+                  const isSelf = m.user.id === currentUserId;
+                  const canRemove = canManage && !isSelf;
+
+                  return (
+                    <div key={m.id} className="flex items-center gap-3 px-3 py-2.5 rounded-[8px] hover:bg-surface-2 transition-colors">
+                      <MemberAvatar name={m.user.name} image={m.user.image} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <p className="text-[12px] font-medium text-foreground">{m.user.name}</p>
+                          {isProjectOwner && (
+                            <span className="flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[oklch(95%_0.05_278)] text-[oklch(42%_0.2_278)] border border-[oklch(85%_0.08_278)] dark:bg-[oklch(22%_0.05_278)] dark:text-[oklch(72%_0.15_278)] dark:border-[oklch(32%_0.08_278)] shrink-0">
+                              <Crown className="w-2.5 h-2.5" />Owner
+                            </span>
+                          )}
+                          {isSelf && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-brand-subtle text-brand border border-brand-muted shrink-0">you</span>
+                          )}
+                          {canManage ? (
+                            <TagInput
+                              value={m.tag ?? ""}
+                              onChange={(val) => updateTag.mutate({ projectId, workspaceId, userId: m.user.id, tag: val || null })}
+                            />
+                          ) : m.tag ? (
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-surface-3 text-foreground-2 border border-border shrink-0">
+                              {m.tag}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="text-[10px] text-muted truncate mt-0.5">{m.user.email}</p>
                       </div>
-                      <p className="text-[10px] text-muted truncate">{m.user.email}</p>
+
+                      {isProjectOwner ? (
+                        <span className={cn("text-[10px] font-semibold px-2 h-7 rounded-md border flex-shrink-0 flex items-center bg-[oklch(95%_0.05_278)] text-[oklch(42%_0.2_278)] border-[oklch(85%_0.08_278)] dark:bg-[oklch(22%_0.05_278)] dark:text-[oklch(72%_0.15_278)] dark:border-[oklch(32%_0.08_278)]")}>
+                          Full access
+                        </span>
+                      ) : canManage ? (
+                        <PermissionSelect
+                          value={m.permission}
+                          onChange={(perm) => updatePermission.mutate({ projectId, workspaceId, userId: m.user.id, permission: perm as "VIEWER" | "EDITOR" | "MANAGER" })}
+                        />
+                      ) : (
+                        <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-md border flex-shrink-0", PERM_STYLE[m.permission])}>
+                          {PERM_LABEL[m.permission]}
+                        </span>
+                      )}
+
+                      {canRemove && !isProjectOwner ? (
+                        <button onClick={() => removeMember.mutate({ projectId, workspaceId, userId: m.user.id })}
+                          className="w-6 h-6 rounded-md flex items-center justify-center text-muted hover:text-error hover:bg-[oklch(95%_0.03_27)] transition-colors flex-shrink-0">
+                          <UserX className="w-3.5 h-3.5" />
+                        </button>
+                      ) : canManage ? (
+                        <div className="w-6 h-6 flex-shrink-0" />
+                      ) : null}
                     </div>
-
-                    {canManage ? (
-                      <PermissionSelect
-                        value={m.permission}
-                        onChange={(perm) => updatePermission.mutate({ projectId, workspaceId, userId: m.user.id, permission: perm as "VIEWER" | "EDITOR" | "MANAGER" })}
-                      />
-                    ) : (
-                      <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-md border flex-shrink-0", PERM_STYLE[m.permission])}>
-                        {PERM_LABEL[m.permission]}
-                      </span>
-                    )}
-
-                    {canManage && (
-                      <button onClick={() => removeMember.mutate({ projectId, workspaceId, userId: m.user.id })}
-                        className="w-6 h-6 rounded-md flex items-center justify-center text-muted hover:text-error hover:bg-[oklch(95%_0.03_27)] transition-colors flex-shrink-0">
-                        <UserX className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
@@ -224,19 +249,20 @@ export function InviteModal({ workspaceId, projectId, projectName, initialJoinCo
               </div>
             )}
 
-            {/* Permission legend — owner only (others don't need it) */}
-            {canManage && (
-              <div className="mt-3 pt-3 border-t border-border space-y-1">
+            {/* Permission legend */}
+            <div className="mt-4 pt-3 border-t border-border">
+              <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-2">Permissions</p>
+              <div className="grid grid-cols-3 gap-2">
                 {Object.entries(PERM_DESC).map(([perm, desc]) => (
-                  <div key={perm} className="flex items-center gap-2">
-                    <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-md border w-20 text-center flex-shrink-0", PERM_STYLE[perm])}>
+                  <div key={perm} className="p-2.5 rounded-[8px] bg-surface-2 border border-border space-y-1.5">
+                    <span className={cn("inline-flex text-[10px] font-semibold px-1.5 py-0.5 rounded-md border", PERM_STYLE[perm])}>
                       {PERM_LABEL[perm]}
                     </span>
-                    <span className="text-[11px] text-muted">{desc}</span>
+                    <p className="text-[10px] text-muted leading-relaxed">{desc}</p>
                   </div>
                 ))}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
@@ -244,10 +270,12 @@ export function InviteModal({ workspaceId, projectId, projectName, initialJoinCo
   );
 }
 
-function MemberAvatar({ name }: { name: string }) {
+function MemberAvatar({ name, image }: { name: string; image?: string | null }) {
   return (
-    <div className="w-8 h-8 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0">
-      <span className="text-[11px] font-bold text-brand">{name.slice(0, 2).toUpperCase()}</span>
+    <div className="w-8 h-8 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+      {image
+        ? <img src={image} alt={name} className="w-full h-full object-cover" />
+        : <span className="text-[11px] font-bold text-brand">{name.slice(0, 2).toUpperCase()}</span>}
     </div>
   );
 }
@@ -284,22 +312,34 @@ function TagInput({ value, onChange }: { value: string; onChange: (v: string) =>
         value={local}
         onChange={(e) => setLocal(e.target.value)}
         onBlur={() => { setEditing(false); onChange(local.trim()); }}
-        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { setLocal(value); setEditing(false); } }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") { setLocal(value); setEditing(false); }
+        }}
         maxLength={30}
-        placeholder="Dev, Tester, PM..."
-        className="w-20 text-[10px] border border-brand/40 rounded-md px-1.5 py-0.5 bg-card outline-none focus:border-brand/60 text-foreground"
+        placeholder="e.g. Dev, PM..."
+        className="w-20 text-[10px] border border-brand/40 rounded-md px-1.5 py-0.5 bg-card outline-none focus:border-brand/60 text-foreground shrink-0"
       />
     );
   }
 
-  return value ? (
-    <button onClick={() => { setLocal(value); setEditing(true); }}
-      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-brand-subtle text-brand border border-brand-muted hover:opacity-80 transition-opacity">
-      {value}
-    </button>
-  ) : (
-    <button onClick={() => { setLocal(""); setEditing(true); }}
-      className="text-[10px] text-muted border border-dashed border-border rounded-md px-1.5 py-0.5 hover:border-brand/40 hover:text-brand transition-colors">
+  if (value) {
+    return (
+      <span
+        onDoubleClick={() => { setLocal(value); setEditing(true); }}
+        title="Double-click to edit"
+        className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-surface-3 text-foreground-2 border border-border shrink-0 cursor-default select-none hover:border-brand/30 hover:text-brand transition-colors"
+      >
+        {value}
+      </span>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => { setLocal(""); setEditing(true); }}
+      className="text-[10px] text-muted border border-dashed border-border rounded-md px-1.5 py-0.5 hover:border-brand/40 hover:text-brand transition-colors shrink-0"
+    >
       + tag
     </button>
   );

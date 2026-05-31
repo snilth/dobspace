@@ -37,7 +37,9 @@ function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -55,6 +57,7 @@ function RegisterForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!meetsReqs) { setError("Password does not meet the requirements."); return; }
+    if (password !== confirmPassword) { setError("Passwords do not match."); return; }
     setError("");
     setLoading(true);
     const result = await signUp.email({ name, email, password });
@@ -163,6 +166,33 @@ function RegisterForm() {
               )}
             </div>
 
+            {/* Confirm password */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-foreground-2">Confirm password</label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter your password"
+                  required
+                  className={cn(
+                    "w-full h-10 px-3 pr-9 text-sm bg-card border rounded-[8px] outline-none transition-all placeholder:text-muted-2",
+                    confirmPassword && password !== confirmPassword
+                      ? "border-error focus:border-error focus:ring-2 focus:ring-error/10"
+                      : "border-border focus:border-brand/60 focus:ring-2 focus:ring-brand/8"
+                  )}
+                />
+                <button type="button" onClick={() => setShowConfirm(p => !p)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors">
+                  {showConfirm ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              </div>
+              {confirmPassword && password !== confirmPassword && (
+                <p className="text-[11px] text-error">Passwords do not match</p>
+              )}
+            </div>
+
             {error && (
               <div className="flex items-center gap-2 text-xs text-error bg-[oklch(97%_0.02_27)] border border-[oklch(88%_0.06_27)] rounded-lg px-3 py-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-error flex-shrink-0" />
@@ -170,7 +200,7 @@ function RegisterForm() {
               </div>
             )}
 
-            <button type="submit" disabled={loading || !meetsReqs}
+            <button type="submit" disabled={loading || !meetsReqs || password !== confirmPassword}
               className="w-full h-10 bg-brand text-brand-foreground text-sm font-semibold rounded-[8px] hover:bg-brand-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mt-2">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
               Create account

@@ -35,7 +35,7 @@ export const dashboardRouter = router({
           }),
           ctx.prisma.taskAssignee.findMany({
             where: { task: { projectId: { in: projectIds }, status: { not: "DONE" } } },
-            select: { userId: true, user: { select: { name: true } } },
+            select: { userId: true, user: { select: { name: true, image: true } } },
           }),
           ctx.prisma.task.findMany({
             where: { projectId: { in: projectIds } },
@@ -72,11 +72,11 @@ export const dashboardRouter = router({
         projectTaskMap[row.projectId][row.status] = row._count._all;
       }
 
-      const workloadCounts = new Map<string, { name: string; count: number }>();
+      const workloadCounts = new Map<string, { name: string; image: string | null; count: number }>();
       for (const row of workloadRaw) {
         const entry = workloadCounts.get(row.userId);
         if (entry) entry.count++;
-        else workloadCounts.set(row.userId, { name: row.user.name, count: 1 });
+        else workloadCounts.set(row.userId, { name: row.user.name, image: row.user.image ?? null, count: 1 });
       }
       const workload = [...workloadCounts.values()].sort((a, b) => b.count - a.count);
 

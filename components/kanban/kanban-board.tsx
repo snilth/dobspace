@@ -107,6 +107,7 @@ function KanbanColumn({ column, tasks, projectId, workspaceId, canAssign, permis
       {showCreate && (
         <CreateTaskDialog
           projectId={projectId}
+          workspaceId={workspaceId}
           defaultStatus={column.id}
           onClose={() => setShowCreate(false)}
           onTaskCreated={(task) => { onTaskCreated(task); setShowCreate(false); }}

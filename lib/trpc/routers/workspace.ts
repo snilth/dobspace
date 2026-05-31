@@ -116,7 +116,7 @@ export const workspaceRouter = router({
       const [wsMembers, projectMembers] = await Promise.all([
         ctx.prisma.workspaceMember.findMany({
           where: { workspaceId: input.workspaceId },
-          include: { user: { select: { id: true, name: true, email: true } } },
+          include: { user: { select: { id: true, name: true, email: true, image: true } } },
           orderBy: { joinedAt: "asc" },
         }),
         ctx.prisma.projectMember.findMany({

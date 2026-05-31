@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X, Hash, Loader2, ArrowRight } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { useRouter } from "next/navigation";
 
@@ -11,10 +11,12 @@ export function JoinByCodeModal({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState("");
   const router = useRouter();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   const joinByCode = useMutation(
     trpc.projects.joinByCode.mutationOptions({
       onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: trpc.projects.listMine.queryKey() });
         onClose();
         router.push(`/projects/${data.projectId}`);
       },

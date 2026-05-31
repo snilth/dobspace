@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession, signOut } from "@/lib/auth/client";
+import { useTheme } from "./theme-provider";
 import { useState, useCallback, useRef } from "react";
 import {
   DndContext, PointerSensor, useSensor, useSensors,
@@ -37,11 +38,11 @@ export function Sidebar() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
+  const { sidebarSticky } = useTheme();
   const { data: currentWs } = useQuery(trpc.workspace.getCurrent.queryOptions());
   const { data: allProjects = [] } = useQuery(trpc.projects.listMine.queryOptions());
 
   const [ownedOrder, setOwnedOrder] = useState<string[] | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const userName = session?.user.name ?? "...";
   const userInitials = userName.slice(0, 2).toUpperCase();
@@ -56,15 +57,6 @@ export function Sidebar() {
     : rawOwned;
 
   const reorder = useMutation(trpc.projects.reorder.mutationOptions());
-  const deleteProject = useMutation(trpc.projects.delete.mutationOptions({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: trpc.projects.listMine.queryKey() });
-      if (confirmDelete && pathname.startsWith(`/projects/${confirmDelete}`)) {
-        router.push("/dashboard");
-      }
-      setConfirmDelete(null);
-    },
-  }));
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -85,7 +77,10 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="group/sidebar w-14 hover:w-[228px] flex-shrink-0 flex flex-col h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 ease-out overflow-hidden">
+      <aside className={cn(
+          "group/sidebar flex-shrink-0 flex flex-col h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 ease-out overflow-hidden",
+          sidebarSticky ? "w-[228px] sidebar-sticky" : "w-14 hover:w-[228px]"
+        )}>
 
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-3.5 h-14 border-b border-sidebar-border flex-shrink-0">
@@ -144,7 +139,6 @@ export function Sidebar() {
                       project={project}
                       workspaceId={workspaceId}
                       pathname={pathname}
-                      onDelete={() => setConfirmDelete(project.id)}
                     />
                   ))}
                 </SortableContext>
@@ -201,34 +195,12 @@ export function Sidebar() {
         </div>
       </aside>
 
-      {/* Delete confirmation dialog */}
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
-          <div className="w-full max-w-sm bg-card rounded-[16px] border border-border shadow-2xl p-5">
-            <div className="w-10 h-10 rounded-xl bg-[oklch(93%_0.04_27)] flex items-center justify-center mb-3">
-              <TrashIcon className="w-5 h-5 text-error" />
-            </div>
-            <h2 className="text-[15px] font-bold text-foreground mb-1">Delete project?</h2>
-            <p className="text-[13px] text-muted mb-4">All tasks, sprints, and data will be permanently deleted and cannot be recovered.</p>
-            <div className="flex gap-2">
-              <button onClick={() => setConfirmDelete(null)}
-                className="flex-1 h-9 border border-border rounded-[8px] text-sm font-medium text-foreground-2 hover:bg-surface-2 transition-colors"
-              >Cancel</button>
-              <button
-                onClick={() => deleteProject.mutate({ id: confirmDelete, workspaceId })}
-                disabled={deleteProject.isPending || !workspaceId}
-                className="flex-1 h-9 bg-error text-white rounded-[8px] text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
-              >Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
 
-function SortableProjectLink({ project, pathname, workspaceId, onDelete }: {
-  project: Project; pathname: string; workspaceId: string; onDelete: () => void;
+function SortableProjectLink({ project, pathname, workspaceId }: {
+  project: Project; pathname: string; workspaceId: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: project.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
@@ -247,19 +219,6 @@ function SortableProjectLink({ project, pathname, workspaceId, onDelete }: {
         <Hash className={cn("w-2.5 h-2.5", active ? "text-brand-light" : "text-sidebar-muted")} />
       </div>
       <ProjectNameCell project={project} workspaceId={workspaceId} />
-
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); onDelete(); }}
-        className={cn(
-          "flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center transition-all",
-          "opacity-0 group-hover/sidebar:group-hover/item:opacity-60 hover:!opacity-100",
-          "text-sidebar-muted hover:text-[oklch(65%_0.2_27)] hover:bg-[oklch(25%_0.04_27)]"
-        )}
-        title="Delete project"
-      >
-        <TrashIcon className="w-3 h-3" />
-      </button>
 
       <div
         {...attributes}

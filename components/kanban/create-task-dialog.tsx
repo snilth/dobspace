@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { X, Loader2, Zap } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { X, Loader2 } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { CatIcon } from "@/components/shared/cat-icon";
+import { AssigneeDropdown } from "./assignee-dropdown";
 import type { TaskStatus, BoardTask } from "./kanban-board";
 
 const PRIORITY_OPTS = [
@@ -15,11 +17,13 @@ const PRIORITY_OPTS = [
 
 export function CreateTaskDialog({
   projectId,
+  workspaceId,
   defaultStatus,
   onClose,
   onTaskCreated,
 }: {
   projectId: string;
+  workspaceId: string;
   defaultStatus: TaskStatus;
   onClose: () => void;
   onTaskCreated: (task: BoardTask) => void;
@@ -28,8 +32,13 @@ export function CreateTaskDialog({
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
   const [dueDate, setDueDate] = useState("");
   const [tags, setTags] = useState("");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const submitBtnRef = useRef<HTMLButtonElement>(null);
   const trpc = useTRPC();
+
+  const { data: members = [] } = useQuery(
+    trpc.projects.members.queryOptions({ projectId, workspaceId })
+  );
 
   const createTask = useMutation(
     trpc.tasks.create.mutationOptions({
@@ -55,6 +64,12 @@ export function CreateTaskDialog({
     })
   );
 
+  function toggleAssignee(userId: string) {
+    setAssigneeIds(prev =>
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || submitBtnRef.current?.disabled) return;
@@ -68,6 +83,7 @@ export function CreateTaskDialog({
         priority,
         ...(dueDate ? { dueDate: new Date(dueDate).toISOString() } : {}),
         ...(parsedTags.length ? { tags: parsedTags } : {}),
+        ...(assigneeIds.length ? { assigneeIds } : {}),
       },
     });
   }
@@ -77,8 +93,8 @@ export function CreateTaskDialog({
       <div className="w-full max-w-md bg-card rounded-[16px] border border-border shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-surface-2/50">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-lg bg-brand flex items-center justify-center">
-              <Zap className="w-3.5 h-3.5 text-brand-foreground" strokeWidth={2.5} />
+            <div className="w-6 h-6 rounded-lg bg-brand flex items-center justify-center overflow-hidden">
+              <CatIcon className="w-4 h-4 text-brand-foreground" />
             </div>
             <h2 className="text-sm font-semibold text-foreground">Create Task</h2>
           </div>
@@ -88,6 +104,7 @@ export function CreateTaskDialog({
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Title */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-foreground-2">Task name</label>
             <input
@@ -100,6 +117,7 @@ export function CreateTaskDialog({
             />
           </div>
 
+          {/* Priority */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-foreground-2">Priority</label>
             <div className="flex gap-2">
@@ -119,6 +137,19 @@ export function CreateTaskDialog({
             </div>
           </div>
 
+          {/* Assignees */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground-2">
+              Assign to <span className="font-normal text-muted">(optional)</span>
+            </label>
+            <AssigneeDropdown
+              members={members.map(m => ({ id: m.user.id, name: m.user.name, image: m.user.image, tag: m.tag }))}
+              selectedIds={assigneeIds}
+              onToggle={toggleAssignee}
+            />
+          </div>
+
+          {/* Due date */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-foreground-2">
               Due date <span className="font-normal text-muted">(optional)</span>
@@ -131,6 +162,7 @@ export function CreateTaskDialog({
             />
           </div>
 
+          {/* Tags */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-foreground-2">
               Tags <span className="font-normal text-muted">(comma-separated, optional)</span>

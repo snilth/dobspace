@@ -1,6 +1,6 @@
 "use client";
 
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon, Monitor, PanelLeft } from "lucide-react";
 import { useTheme, type Accent } from "@/components/shared/theme-provider";
 import { cn } from "@/lib/utils";
 import { Section } from "./account-section";
@@ -20,7 +20,7 @@ const ACCENTS: { value: Accent; label: string; color: string; ring: string }[] =
 ];
 
 export function PreferenceSection() {
-  const { theme, setTheme, accent, setAccent } = useTheme();
+  const { theme, setTheme, accent, setAccent, sidebarSticky, setSidebarSticky } = useTheme();
 
   return (
     <Section title="Preferences" description="Appearance and display settings">
@@ -44,6 +44,37 @@ export function PreferenceSection() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Sidebar */}
+      <div>
+        <p className="text-xs font-semibold text-foreground-2 mb-3">Sidebar</p>
+        <button
+          onClick={() => setSidebarSticky(!sidebarSticky)}
+          className={cn(
+            "w-full flex items-center justify-between px-4 py-3 rounded-[10px] border-2 transition-all",
+            sidebarSticky
+              ? "border-brand bg-brand-subtle text-brand"
+              : "border-border bg-surface-2 text-muted hover:border-border-strong hover:text-foreground"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <PanelLeft className="w-4 h-4" />
+            <div className="text-left">
+              <p className="text-[13px] font-semibold leading-none mb-0.5">Keep sidebar expanded</p>
+              <p className="text-[11px] opacity-70">Always show full sidebar, no hover needed</p>
+            </div>
+          </div>
+          <div className={cn(
+            "w-10 h-6 rounded-full transition-colors flex items-center px-0.5 flex-shrink-0",
+            sidebarSticky ? "bg-brand" : "bg-surface-3"
+          )}>
+            <div className={cn(
+              "w-5 h-5 rounded-full bg-white shadow-sm transition-transform",
+              sidebarSticky ? "translate-x-4" : "translate-x-0"
+            )} />
+          </div>
+        </button>
       </div>
 
       {/* Accent color */}
