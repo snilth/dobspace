@@ -68,9 +68,11 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const { data: tasks = [] } = useQuery(
-    trpc.calendar.tasks.queryOptions({ workspaceId, year, month }, { refetchInterval: 10_000 })
-  );
+  const { data: tasks = [] } = useQuery({
+    ...trpc.calendar.tasks.queryOptions({ workspaceId, year, month }),
+    refetchInterval: 10_000,
+    staleTime: 0,
+  });
 
   // Assign stable color index per project
   const projectColorMap = useMemo(() => {

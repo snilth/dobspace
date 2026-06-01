@@ -15,9 +15,11 @@ export function NotificationBell() {
   const pathname = usePathname();
   const active = pathname === "/notifications";
 
-  const { data: count = 0 } = useQuery(
-    trpc.notifications.unreadCount.queryOptions(undefined, { refetchInterval: 5_000 })
-  );
+  const { data: count = 0 } = useQuery({
+    ...trpc.notifications.unreadCount.queryOptions(),
+    refetchInterval: 5_000,
+    staleTime: 0,
+  });
 
   const { data: session } = useSession();
   usePusherUserEvent(session?.user.id ?? "", "notification:new", () => {
