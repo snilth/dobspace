@@ -233,7 +233,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
       {/* Task edit modal */}
       {editTask && (
         <TaskEditModal
-          task={editTask as BoardTask}
+          task={editTask as unknown as BoardTask}
           workspaceId={workspaceId}
           canAssign
           onClose={() => setEditTask(null)}

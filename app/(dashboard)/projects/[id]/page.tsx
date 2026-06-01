@@ -1,7 +1,6 @@
 import { createServerCaller } from "@/lib/trpc/server";
 import { getSession } from "@/lib/auth/session";
 import { KanbanBoard, type BoardTask } from "@/components/kanban/kanban-board";
-import { ChatPanel } from "@/components/chat/chat-panel";
 import { LayoutGrid } from "lucide-react";
 import { ProjectTeamButton } from "@/components/shared/project-team-button";
 import { notFound } from "next/navigation";
@@ -89,7 +88,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             />
           </div>
         </div>
-        <ChatPanel workspaceId={project.workspaceId} />
       </div>
     </div>
   );

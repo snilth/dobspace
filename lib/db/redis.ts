@@ -9,4 +9,4 @@ export const redis =
     token: process.env.UPSTASH_REDIS_REST_TOKEN ?? "",
   });
 
-if (process.env.NODE_ENV !== "production") globalForRedis.redis = redis;
+globalForRedis.redis = redis;
