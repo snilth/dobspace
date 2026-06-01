@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { anthropic } from "@/lib/ai/client";
-import { buildProjectContext } from "@/lib/ai/context-builder";
+import { buildWorkspaceContext } from "@/lib/ai/context-builder";
 import { buildSystemPrompt } from "@/lib/ai/prompts";
 import { redis } from "@/lib/db/redis";
 import { prisma } from "@/lib/db/prisma";
@@ -11,7 +11,7 @@ const RATE_LIMIT = 20;
 const RATE_WINDOW = 60;
 
 const BodySchema = z.object({
-  projectId: z.string().min(1),
+  workspaceId: z.string().min(1),
   messages: z.array(
     z.object({
       role: z.enum(["user", "assistant"]),
@@ -27,55 +27,37 @@ async function checkRateLimit(userId: string): Promise<boolean> {
   return count <= RATE_LIMIT;
 }
 
-async function userCanAccessProject(userId: string, projectId: string): Promise<boolean> {
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: { workspaceId: true, workspace: { select: { ownerId: true } } },
+async function userCanAccessWorkspace(userId: string, workspaceId: string): Promise<boolean> {
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { ownerId: true },
   });
-  if (!project) return false;
+  if (!workspace) return false;
+  if (workspace.ownerId === userId) return true;
 
-  // Workspace owner has full access
-  if (project.workspace.ownerId === userId) return true;
-
-  // Check workspace membership
-  const wsMember = await prisma.workspaceMember.findUnique({
-    where: { workspaceId_userId: { workspaceId: project.workspaceId, userId } },
+  const member = await prisma.workspaceMember.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId } },
   });
-  if (!wsMember) return false;
-
-  // Check project membership
-  const pm = await prisma.projectMember.findUnique({
-    where: { projectId_userId: { projectId, userId } },
-  });
-  return !!pm;
+  return !!member;
 }
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: req.headers });
-  if (!session) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  if (!session) return new Response("Unauthorized", { status: 401 });
 
   const body = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(body);
-  if (!parsed.success) {
-    return new Response("Invalid request", { status: 400 });
-  }
+  if (!parsed.success) return new Response("Invalid request", { status: 400 });
 
   const allowed = await checkRateLimit(session.user.id);
-  if (!allowed) {
-    return new Response("Rate limit exceeded. Try again in a minute.", { status: 429 });
-  }
+  if (!allowed) return new Response("Rate limit exceeded. Try again in a minute.", { status: 429 });
 
-  const { projectId, messages } = parsed.data;
+  const { workspaceId, messages } = parsed.data;
 
-  // Authorization: verify user has access to this project
-  const hasAccess = await userCanAccessProject(session.user.id, projectId);
-  if (!hasAccess) {
-    return new Response("Forbidden", { status: 403 });
-  }
+  const hasAccess = await userCanAccessWorkspace(session.user.id, workspaceId);
+  if (!hasAccess) return new Response("Forbidden", { status: 403 });
 
-  const context = await buildProjectContext(projectId);
+  const context = await buildWorkspaceContext(workspaceId);
   const systemPrompt = buildSystemPrompt(context);
 
   const encoder = new TextEncoder();
@@ -91,18 +73,13 @@ export async function POST(req: NextRequest) {
         });
 
         for await (const chunk of aiStream) {
-          if (
-            chunk.type === "content_block_delta" &&
-            chunk.delta.type === "text_delta"
-          ) {
-            const data = JSON.stringify({ text: chunk.delta.text });
-            controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+          if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`));
           }
         }
 
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch {
-        // Generic error — don't leak internals to client
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "An error occurred" })}\n\n`));
       } finally {
         controller.close();

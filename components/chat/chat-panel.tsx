@@ -11,13 +11,13 @@ type Message = {
   isStreaming?: boolean;
 };
 
-export function ChatPanel({ projectId }: { projectId: string }) {
+export function ChatPanel({ workspaceId }: { workspaceId: string }) {
   const [open, setOpen] = useState(true);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       role: "assistant",
-      content: "Hi 👋 I'm DobSpace AI — ask me anything about this project.\n\nTry: *\"What tasks are still pending?\"* or *\"Summarize the current sprint\"*",
+      content: "Hi 👋 I'm DobSpace AI — ask me anything about your workspace.\n\nTry: *\"What tasks are overdue?\"* or *\"What's due this week?\"*",
     },
   ]);
   const [input, setInput] = useState("");
@@ -52,7 +52,7 @@ export function ChatPanel({ projectId }: { projectId: string }) {
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, messages: history }),
+        body: JSON.stringify({ workspaceId, messages: history }),
         signal: abortRef.current.signal,
       });
 
@@ -200,7 +200,7 @@ export function ChatPanel({ projectId }: { projectId: string }) {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
               }}
-              placeholder="Ask about this project..."
+              placeholder="Ask about your workspace..."
               rows={1}
               maxLength={2000}
               className="flex-1 resize-none text-[13px] bg-transparent outline-none placeholder:text-muted-2 min-h-[24px] max-h-[120px] leading-relaxed"

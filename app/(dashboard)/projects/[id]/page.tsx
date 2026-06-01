@@ -89,7 +89,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             />
           </div>
         </div>
-        <ChatPanel projectId={project.id} />
+        <ChatPanel workspaceId={project.workspaceId} />
       </div>
     </div>
   );

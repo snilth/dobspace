@@ -1,47 +1,57 @@
-import type { ProjectContext } from "./context-builder";
+import type { WorkspaceContext } from "./context-builder";
 
-export function buildSystemPrompt(context: ProjectContext): string {
-  const taskSummary = [
-    `BACKLOG: ${context.taskCounts.BACKLOG}`,
-    `IN_PROGRESS: ${context.taskCounts.IN_PROGRESS}`,
-    `REVIEW: ${context.taskCounts.REVIEW}`,
-    `DONE: ${context.taskCounts.DONE}`,
-  ].join(", ");
-
+export function buildSystemPrompt(context: WorkspaceContext): string {
   const memberList = context.members
     .map((m) => `- ${m.name}${m.jobRole ? ` (${m.jobRole})` : ""}`)
     .join("\n");
 
-  const sprintInfo = context.activeSprint
-    ? `Active sprint: "${context.activeSprint.name}" (${context.activeSprint.startDate} → ${context.activeSprint.endDate}), ${context.activeSprint.taskCount} tasks`
-    : "No active sprint";
+  const projectSections = context.projects.map((p) => {
+    const counts = `BACKLOG: ${p.taskCounts.BACKLOG}, IN_PROGRESS: ${p.taskCounts.IN_PROGRESS}, REVIEW: ${p.taskCounts.REVIEW}, DONE: ${p.taskCounts.DONE}`;
+    const sprint = p.activeSprint
+      ? `Sprint "${p.activeSprint.name}" — ends ${p.activeSprint.endDate} (${p.activeSprint.daysLeft < 0 ? `${Math.abs(p.activeSprint.daysLeft)} days overdue` : `${p.activeSprint.daysLeft} days left`})`
+      : "No active sprint";
 
-  const recentTasks = context.recentTasks
-    .map((t) => `- [${t.status}][${t.priority}] ${t.title}${t.assignee ? ` → ${t.assignee}` : ""}${t.dueDate ? ` (due ${t.dueDate})` : ""}`)
-    .join("\n");
+    const overdue = p.overdueTasks.length > 0
+      ? p.overdueTasks.map((t) => `  ⚠ ${t.title}${t.assignee ? ` → ${t.assignee}` : ""} (${t.daysOverdue}d overdue)`).join("\n")
+      : "  None";
 
-  return `You are DevMind AI, an assistant embedded in a project management tool for developer teams.
-You help teams understand their sprint status, identify blockers, and make better decisions.
+    const dueSoon = p.dueSoonTasks.length > 0
+      ? p.dueSoonTasks.map((t) => `  • ${t.title}${t.assignee ? ` → ${t.assignee}` : ""} (due ${t.dueDate}, ${t.daysLeft === 0 ? "today" : `${t.daysLeft}d`})`).join("\n")
+      : "  None";
 
-## Current Project: ${context.projectName}
+    const inProgress = p.inProgressTasks.length > 0
+      ? p.inProgressTasks.map((t) => `  → [${t.priority}] ${t.title}${t.assignee ? ` (${t.assignee})` : ""}${t.dueDate ? ` due ${t.dueDate}` : ""}`).join("\n")
+      : "  None";
 
-### Task counts
-${taskSummary}
+    return `### Project: ${p.name}
+Tasks: ${counts}
+${sprint}
+Overdue:
+${overdue}
+Due within 7 days:
+${dueSoon}
+In progress:
+${inProgress}`;
+  }).join("\n\n");
 
-### Sprint
-${sprintInfo}
+  return `You are DobSpace AI, a smart workspace assistant for developer teams.
+You have full visibility into all projects, deadlines, and team members in this workspace.
 
-### Team members
-${memberList}
+Today: ${context.today}
 
-### Recent tasks (up to 20)
-${recentTasks || "No tasks yet"}
+## Workspace: ${context.workspaceName}
+
+### Team
+${memberList || "No members"}
+
+## Projects
+${projectSections || "No active projects"}
 
 ## Guidelines
 - Answer in the same language the user writes in (Thai or English)
-- Be concise and actionable — no fluff
-- Reference specific task names and team members when relevant
+- Be concise and actionable
+- Proactively highlight overdue tasks and upcoming deadlines when relevant
+- Reference specific task names and team members when answering
 - Never fabricate data — only use what is provided above
-- Do not expose raw IDs to the user
-- Today's date: ${context.today}`;
+- Do not expose raw IDs`;
 }
