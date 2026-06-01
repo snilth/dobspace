@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bot, Send, Sparkles, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Bot, Send, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Message = {
@@ -109,111 +109,104 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
   };
 
   return (
-    <>
-      {/* Toggle button — always visible when closed */}
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          title="Open AI Assistant"
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 h-10 px-4 rounded-xl bg-brand text-brand-foreground shadow-lg hover:bg-brand-dark transition-colors"
-        >
-          <Bot className="w-4 h-4" />
-          <span className="text-[13px] font-semibold">AI</span>
-        </button>
-      )}
+    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
+      {/* Chat box */}
+      {open && (
+        <div className="w-[340px] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden"
+          style={{ height: "480px" }}>
 
-      {/* Floating panel */}
-      <div className={cn(
-        "fixed bottom-0 right-0 z-40 h-screen w-[300px] flex flex-col border-l border-border bg-card shadow-xl",
-        "transition-transform duration-200 ease-out",
-        open ? "translate-x-0" : "translate-x-full"
-      )}>
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-center gap-2.5 px-4 h-[54px] border-b border-border flex-shrink-0 bg-surface-2/60">
-          <div className="w-7 h-7 rounded-xl bg-brand flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-3.5 h-3.5 text-brand-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-foreground leading-none mb-0.5">DobSpace AI</p>
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-success" />
-              <p className="text-[10px] text-muted">Online</p>
+          {/* Header */}
+          <div className="flex items-center gap-2.5 px-4 h-[52px] border-b border-border flex-shrink-0 bg-surface-2/60">
+            <div className="w-7 h-7 rounded-xl bg-brand flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-3.5 h-3.5 text-brand-foreground" />
             </div>
-          </div>
-          <button
-            onClick={() => setOpen(false)}
-            className="w-7 h-7 rounded-lg hover:bg-surface-3 flex items-center justify-center text-muted hover:text-foreground transition-colors flex-shrink-0"
-          >
-            <PanelRightClose className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-3">
-          {messages.map((msg) => (
-            <div key={msg.id} className={cn("flex gap-2", msg.role === "user" && "justify-end")}>
-              {msg.role === "assistant" && (
-                <div className="w-6 h-6 rounded-xl bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Bot className="w-3 h-3 text-brand" />
-                </div>
-              )}
-              <div className={cn(
-                "max-w-[86%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
-                msg.role === "user"
-                  ? "bg-brand text-brand-foreground rounded-tr-md"
-                  : "bg-surface-2 text-foreground rounded-tl-md border border-border"
-              )}>
-                <MarkdownText text={msg.content} />
-                {msg.isStreaming && (
-                  <span className="inline-flex gap-0.5 ml-1 items-end">
-                    {[0, 1, 2].map((i) => (
-                      <span
-                        key={i}
-                        className="w-1 h-1 rounded-full bg-current opacity-60 animate-bounce"
-                        style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.8s" }}
-                      />
-                    ))}
-                  </span>
-                )}
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-foreground leading-none mb-0.5">DobSpace AI</p>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                <p className="text-[10px] text-muted">Online</p>
               </div>
             </div>
-          ))}
-          <div ref={bottomRef} />
-        </div>
-
-        {/* Input */}
-        <div className="px-3.5 py-3 border-t border-border flex-shrink-0 bg-surface-2/40">
-          <div className="flex items-end gap-2 bg-card border border-border rounded-xl p-2 focus-within:border-brand/50 focus-within:ring-2 focus-within:ring-brand/8 transition-all">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                e.target.style.height = "auto";
-                e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-              }}
-              placeholder="Ask about your workspace..."
-              rows={1}
-              maxLength={2000}
-              className="flex-1 resize-none text-[13px] bg-transparent outline-none placeholder:text-muted-2 min-h-[24px] max-h-[120px] leading-relaxed"
-            />
             <button
-              onClick={sendMessage}
-              disabled={!input.trim() || isLoading}
-              className="w-7 h-7 bg-brand text-brand-foreground rounded-lg flex items-center justify-center disabled:opacity-35 hover:bg-brand-dark transition-colors flex-shrink-0"
+              onClick={() => setOpen(false)}
+              className="w-7 h-7 rounded-lg hover:bg-surface-3 flex items-center justify-center text-muted hover:text-foreground transition-colors"
             >
-              <Send className="w-3 h-3" />
+              <X className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-[10px] text-muted-2 mt-1.5 text-right">{input.length}/2000</p>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-3">
+            {messages.map((msg) => (
+              <div key={msg.id} className={cn("flex gap-2", msg.role === "user" && "justify-end")}>
+                {msg.role === "assistant" && (
+                  <div className="w-6 h-6 rounded-xl bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Bot className="w-3 h-3 text-brand" />
+                  </div>
+                )}
+                <div className={cn(
+                  "max-w-[86%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
+                  msg.role === "user"
+                    ? "bg-brand text-brand-foreground rounded-tr-md"
+                    : "bg-surface-2 text-foreground rounded-tl-md border border-border"
+                )}>
+                  <MarkdownText text={msg.content} />
+                  {msg.isStreaming && (
+                    <span className="inline-flex gap-0.5 ml-1 items-end">
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className="w-1 h-1 rounded-full bg-current opacity-60 animate-bounce"
+                          style={{ animationDelay: `${i * 0.15}s`, animationDuration: "0.8s" }}
+                        />
+                      ))}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Input */}
+          <div className="px-3.5 py-3 border-t border-border flex-shrink-0 bg-surface-2/40">
+            <div className="flex items-end gap-2 bg-card border border-border rounded-xl p-2 focus-within:border-brand/50 focus-within:ring-2 focus-within:ring-brand/8 transition-all">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 100) + "px";
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+                }}
+                placeholder="Ask about your workspace..."
+                rows={1}
+                maxLength={2000}
+                className="flex-1 resize-none text-[13px] bg-transparent outline-none placeholder:text-muted-2 min-h-[24px] max-h-[100px] leading-relaxed"
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!input.trim() || isLoading}
+                className="w-7 h-7 bg-brand text-brand-foreground rounded-lg flex items-center justify-center disabled:opacity-35 hover:bg-brand-dark transition-colors flex-shrink-0"
+              >
+                <Send className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-      </div>
-    </>
+      )}
+
+      {/* Toggle button */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-12 h-12 rounded-full bg-brand text-brand-foreground shadow-lg hover:bg-brand-dark transition-colors flex items-center justify-center"
+      >
+        {open ? <X className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
+      </button>
+    </div>
   );
 }
 
