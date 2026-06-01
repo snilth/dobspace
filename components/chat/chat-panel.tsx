@@ -12,7 +12,7 @@ type Message = {
 };
 
 export function ChatPanel({ workspaceId }: { workspaceId: string }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -109,12 +109,8 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
   };
 
   return (
-    <div className={cn(
-      "relative flex-shrink-0 h-full",
-      "transition-[width] duration-200 ease-out",
-      open ? "w-[300px]" : "w-0"
-    )}>
-      {/* Floating toggle button — fixed bottom-right, only when closed */}
+    <>
+      {/* Toggle button — always visible when closed */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
@@ -126,13 +122,13 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
         </button>
       )}
 
-      {/* Inner panel: overflow-hidden clips content during width animation */}
-      <div className="absolute inset-0 flex flex-col border-l border-border bg-card overflow-hidden">
-      {/* Panel content — only interactive when open */}
+      {/* Floating panel */}
       <div className={cn(
-        "flex flex-col h-full w-[300px] transition-opacity duration-150",
-        open ? "opacity-100" : "opacity-0 pointer-events-none"
+        "fixed bottom-0 right-0 z-40 h-screen w-[300px] flex flex-col border-l border-border bg-card shadow-xl",
+        "transition-transform duration-200 ease-out",
+        open ? "translate-x-0" : "translate-x-full"
       )}>
+      <div className="flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center gap-2.5 px-4 h-[54px] border-b border-border flex-shrink-0 bg-surface-2/60">
           <div className="w-7 h-7 rounded-xl bg-brand flex items-center justify-center flex-shrink-0">
@@ -217,7 +213,7 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
         </div>
       </div>
       </div>
-    </div>
+    </>
   );
 }
 
