@@ -18,9 +18,9 @@ const PROJECT_COLORS = [
 ];
 
 const PRIORITY_DOT: Record<string, string> = {
-  HIGH:   "bg-[oklch(55%_0.22_27)]",
-  MEDIUM: "bg-[oklch(58%_0.2_55)]",
-  LOW:    "bg-[oklch(52%_0.2_148)]",
+  HIGH:   "bg-[oklch(50%_0.28_15)]",
+  MEDIUM: "bg-[oklch(72%_0.18_85)]",
+  LOW:    "bg-[oklch(55%_0.18_148)]",
 };
 
 const STATUS_BORDER: Record<string, string> = {
@@ -46,7 +46,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [hiddenProjects, setHiddenProjects] = useState<Set<string>>(new Set());
-  const [showBacklog, setShowBacklog] = useState(false);
+  const [hiddenStatuses, setHiddenStatuses] = useState<Set<string>>(new Set(["BACKLOG"]));
   const [editTask, setEditTask] = useState<CalendarTask | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -89,8 +89,16 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
 
   const visibleTasks = tasks.filter((t) =>
     !hiddenProjects.has(t.project.id) &&
-    (showBacklog ? true : t.status !== "BACKLOG")
+    !hiddenStatuses.has(t.status)
   );
+
+  function toggleStatus(status: string) {
+    setHiddenStatuses((prev) => {
+      const next = new Set(prev);
+      next.has(status) ? next.delete(status) : next.add(status);
+      return next;
+    });
+  }
 
   // Build day → tasks map
   const tasksByDay = useMemo(() => {
@@ -148,19 +156,30 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Backlog toggle */}
-          <button
-            onClick={() => setShowBacklog((v) => !v)}
-            className={cn(
-              "flex items-center gap-1.5 px-3 h-8 rounded-lg border text-[13px] font-medium transition-colors",
-              showBacklog
-                ? "bg-surface-3 border-border text-foreground"
-                : "bg-card border-border text-muted hover:text-foreground hover:bg-surface-2"
-            )}
-          >
-            <span className="w-2 h-2 rounded-full bg-[oklch(65%_0.01_258)]" />
-            Backlog
-          </button>
+          {/* Status filters */}
+          {(["IN_PROGRESS", "REVIEW", "BACKLOG"] as const).map((status) => {
+            const active = !hiddenStatuses.has(status);
+            const meta = {
+              IN_PROGRESS: { label: "In Progress", dot: "bg-[oklch(45%_0.25_228)]" },
+              REVIEW:      { label: "Review",      dot: "bg-[oklch(52%_0.22_55)]"  },
+              BACKLOG:     { label: "Backlog",      dot: "bg-[oklch(55%_0.04_258)]" },
+            }[status];
+            return (
+              <button
+                key={status}
+                onClick={() => toggleStatus(status)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 h-8 rounded-lg border text-[13px] font-medium transition-colors",
+                  active
+                    ? "bg-surface-3 border-border text-foreground"
+                    : "bg-card border-border text-muted hover:text-foreground hover:bg-surface-2 opacity-50"
+                )}
+              >
+                <span className={cn("w-2 h-2 rounded-full", active ? meta.dot : "bg-muted")} />
+                {meta.label}
+              </button>
+            );
+          })}
 
         {/* Project filter dropdown */}
         {projects.length > 0 && (
@@ -260,7 +279,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
                             key={task.id}
                             onClick={() => setEditTask(task)}
                             className={cn(
-                              "w-full text-left rounded-lg pl-2.5 pr-2 py-2 text-[12px] leading-snug transition-opacity hover:opacity-80",
+                              "w-full text-left rounded-md pl-2 pr-1.5 py-1.5 text-[11.5px] leading-snug transition-opacity hover:opacity-80",
                               color.bg, color.text,
                               STATUS_BORDER[task.status]
                             )}
