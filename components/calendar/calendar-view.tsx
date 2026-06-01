@@ -193,7 +193,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
         </div>
 
         {/* Day cells — equal rows, each cell scrolls independently */}
-        <div className="grid grid-cols-7 flex-1" style={{ gridTemplateRows: `repeat(${totalCells / 7}, 1fr)` }}>
+        <div className="grid grid-cols-7 overflow-hidden" style={{ flex: 1, gridTemplateRows: `repeat(${totalCells / 7}, minmax(0, 1fr))` }}>
           {Array.from({ length: totalCells }, (_, i) => {
             const day = i - firstWeekday + 1;
             const isValid = day >= 1 && day <= daysInMonth;
