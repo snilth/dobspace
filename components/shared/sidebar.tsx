@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession, signOut } from "@/lib/auth/client";
+import { destroyPusherClient } from "@/lib/pusher/client";
 import { useTheme } from "./theme-provider";
 import { useState, useCallback, useRef } from "react";
 import {
@@ -72,6 +73,7 @@ export function Sidebar() {
   }, [ownedProjects, workspaceId, reorder]);
 
   async function handleSignOut() {
+    destroyPusherClient();
     await signOut();
     router.push("/login");
   }

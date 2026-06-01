@@ -11,10 +11,16 @@ export function getPusherClient(): PusherJs | null {
   if (!key || !cluster) return null;
 
   if (!_pusher) {
-    PusherJs.logToConsole = process.env.NODE_ENV !== "production";
     _pusher = new PusherJs(key, { cluster, authEndpoint: "/api/pusher/auth" });
     _pusher.connection.bind("error", (err: unknown) => console.error("[Pusher] connection error", err));
     _pusher.connection.bind("state_change", ({ current }: { current: string }) => console.log("[Pusher] state →", current));
   }
   return _pusher;
+}
+
+export function destroyPusherClient(): void {
+  if (_pusher) {
+    _pusher.disconnect();
+    _pusher = null;
+  }
 }
