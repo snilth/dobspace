@@ -24,9 +24,9 @@ const PRIORITY_DOT: Record<string, string> = {
 };
 
 const STATUS_BORDER: Record<string, string> = {
-  IN_PROGRESS: "border-l-[3px] border-l-[oklch(52%_0.22_228)]",
-  REVIEW:      "border-l-[3px] border-l-[oklch(58%_0.2_55)]",
-  BACKLOG:     "border-l-[3px] border-l-[oklch(65%_0.01_258)]",
+  IN_PROGRESS: "border-l-[4px] border-l-[oklch(45%_0.25_228)]",
+  REVIEW:      "border-l-[4px] border-l-[oklch(52%_0.22_55)]",
+  BACKLOG:     "border-l-[4px] border-l-[oklch(55%_0.04_258)]",
 };
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -260,7 +260,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
                             key={task.id}
                             onClick={() => setEditTask(task)}
                             className={cn(
-                              "w-full text-left rounded-lg px-2 py-1.5 text-[11.5px] leading-snug transition-opacity hover:opacity-80",
+                              "w-full text-left rounded-lg pl-2.5 pr-2 py-2 text-[12px] leading-snug transition-opacity hover:opacity-80",
                               color.bg, color.text,
                               STATUS_BORDER[task.status]
                             )}
@@ -269,7 +269,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
                               <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[3px]", PRIORITY_DOT[task.priority])} />
                               <div className="flex-1 min-w-0">
                                 <p className="font-semibold truncate">{task.title}</p>
-                                <p className="opacity-60 truncate text-[10.5px] mt-0.5">{task.project.name}</p>
+                                <p className="opacity-60 truncate text-[11px] mt-0.5">{task.project.name}</p>
                               </div>
                               {task.assignee?.image && (
                                 <img
