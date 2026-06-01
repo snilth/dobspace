@@ -181,10 +181,10 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
         )}
       </div>
 
-      {/* Calendar grid */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Calendar grid — fills remaining height, no outer scroll */}
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Weekday headers */}
-        <div className="grid grid-cols-7 border-b border-border">
+        <div className="grid grid-cols-7 border-b border-border flex-shrink-0">
           {WEEKDAYS.map((d) => (
             <div key={d} className="py-2 text-center text-[11px] font-semibold text-muted uppercase tracking-wide">
               {d}
@@ -192,8 +192,8 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
           ))}
         </div>
 
-        {/* Day cells */}
-        <div className="grid grid-cols-7 flex-1" style={{ gridAutoRows: "minmax(100px, 1fr)" }}>
+        {/* Day cells — equal rows, each cell scrolls independently */}
+        <div className="grid grid-cols-7 flex-1" style={{ gridTemplateRows: `repeat(${totalCells / 7}, 1fr)` }}>
           {Array.from({ length: totalCells }, (_, i) => {
             const day = i - firstWeekday + 1;
             const isValid = day >= 1 && day <= daysInMonth;
@@ -203,7 +203,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
               <div
                 key={i}
                 className={cn(
-                  "border-b border-r border-border p-1.5 min-h-[100px]",
+                  "border-b border-r border-border flex flex-col overflow-hidden",
                   !isValid && "bg-surface-2/30",
                   isToday(day) && isValid && "bg-brand/3"
                 )}
@@ -211,7 +211,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
                 {isValid && (
                   <>
                     <div className={cn(
-                      "w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-medium mb-1 ml-0.5",
+                      "w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-medium flex-shrink-0 mt-1.5 ml-1.5",
                       isToday(day)
                         ? "bg-brand text-brand-foreground"
                         : "text-foreground"
@@ -219,7 +219,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
                       {day}
                     </div>
 
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 overflow-y-auto px-1.5 pb-1.5 flex-1 min-h-0">
                       {dayTasks.map((task) => {
                         const ci = projectColorMap.get(task.project.id) ?? 0;
                         const color = PROJECT_COLORS[ci];
