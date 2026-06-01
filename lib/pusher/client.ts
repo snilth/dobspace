@@ -14,7 +14,6 @@ export function getPusherClient(): PusherJs | null {
     _pusher = new PusherJs(key, {
       cluster,
       authEndpoint: "/api/pusher/auth",
-      auth: { transport: "ajax" },
     });
   }
   return _pusher;
