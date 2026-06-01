@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, FolderKanban, Settings,
-  ChevronRight, LogOut, Hash, UserCircle2,
+  ChevronRight, LogOut, Hash, UserCircle2, CalendarDays,
 } from "lucide-react";
 import { NotificationBell } from "./notification-bell";
 import { CatIcon } from "./cat-icon";
@@ -27,6 +27,7 @@ import { CSS } from "@dnd-kit/utilities";
 const NAV_ITEMS = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
   { href: "/projects", icon: FolderKanban, label: "Projects" },
+  { href: "/calendar", icon: CalendarDays, label: "Calendar" },
 ];
 
 type Project = { id: string; name: string; isOwned: boolean };

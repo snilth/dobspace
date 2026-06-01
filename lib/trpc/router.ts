@@ -6,6 +6,7 @@ import { notificationsRouter } from "./routers/notifications";
 import { dashboardRouter } from "./routers/dashboard";
 import { activityLogRouter } from "./routers/activityLog";
 import { notificationPreferenceRouter } from "./routers/notificationPreference";
+import { calendarRouter } from "./routers/calendar";
 
 export const appRouter = router({
   workspace: workspaceRouter,
@@ -15,6 +16,7 @@ export const appRouter = router({
   dashboard: dashboardRouter,
   activityLog: activityLogRouter,
   notificationPreference: notificationPreferenceRouter,
+  calendar: calendarRouter,
 });
 
 export type AppRouter = typeof appRouter;
