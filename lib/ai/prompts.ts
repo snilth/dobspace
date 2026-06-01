@@ -9,7 +9,7 @@ export function buildSystemPrompt(context: ProjectContext): string {
   ].join(", ");
 
   const memberList = context.members
-    .map((m) => `- ${m.name} (${m.permission}${m.jobRole ? `, ${m.jobRole}` : ""})`)
+    .map((m) => `- ${m.name}${m.jobRole ? ` (${m.jobRole})` : ""}`)
     .join("\n");
 
   const sprintInfo = context.activeSprint

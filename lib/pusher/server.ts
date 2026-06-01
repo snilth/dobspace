@@ -24,7 +24,7 @@ export function emitToProject<E extends keyof ServerToClientEvents>(
 ) {
   const pusher = getPusher();
   if (!pusher) return;
-  pusher.trigger(`project-${projectId}`, event, payload).catch(() => {});
+  pusher.trigger(`private-project-${projectId}`, event, payload).catch(() => {});
 }
 
 export function emitToUser(
@@ -34,5 +34,5 @@ export function emitToUser(
 ) {
   const pusher = getPusher();
   if (!pusher) return;
-  pusher.trigger(`user-${userId}`, event, payload).catch(() => {});
+  pusher.trigger(`private-user-${userId}`, event, payload).catch(() => {});
 }

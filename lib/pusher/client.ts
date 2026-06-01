@@ -11,7 +11,11 @@ export function getPusherClient(): PusherJs | null {
   if (!key || !cluster) return null;
 
   if (!_pusher) {
-    _pusher = new PusherJs(key, { cluster });
+    _pusher = new PusherJs(key, {
+      cluster,
+      authEndpoint: "/api/pusher/auth",
+      auth: { transport: "ajax" },
+    });
   }
   return _pusher;
 }

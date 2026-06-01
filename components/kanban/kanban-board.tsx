@@ -138,7 +138,7 @@ export function KanbanBoard({ initialTasks, projectId, workspaceId = "", current
   const trpc = useTRPC();
   const moveTask = useMutation(trpc.tasks.move.mutationOptions());
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-  const channel = `project-${projectId}`;
+  const channel = `private-project-${projectId}`;
 
   usePusherEvent(channel, "task:moved", useCallback((payload: TaskMovedPayload) => {
     if (payload.changedBy === currentUserId) return;

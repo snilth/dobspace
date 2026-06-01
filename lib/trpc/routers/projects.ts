@@ -33,55 +33,57 @@ async function canAccessProject(
 export const projectsRouter = router({
   // All projects across every workspace the user belongs to
   listMine: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
     const memberships = await ctx.prisma.workspaceMember.findMany({
-      where: { userId: ctx.session.user.id },
+      where: { userId },
       select: { workspaceId: true, workspace: { select: { ownerId: true } } },
     });
 
-    const results = await Promise.all(
-      memberships.map(async ({ workspaceId, workspace }) => {
-        const owner = workspace.ownerId === ctx.session.user.id;
-        const where = owner
-          ? { workspaceId, status: "ACTIVE" as const }
-          : { workspaceId, status: "ACTIVE" as const, members: { some: { userId: ctx.session.user.id } } };
-
-        const projects = await ctx.prisma.project.findMany({
-          where,
-          select: { id: true, name: true },
-          orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-        });
-
-        return projects.map((p) => ({ ...p, isOwned: owner }));
-      })
+    const workspaceIds = memberships.map((m) => m.workspaceId);
+    const ownerSet = new Set(
+      memberships.filter((m) => m.workspace.ownerId === userId).map((m) => m.workspaceId)
     );
 
-    return results.flat();
+    const projects = await ctx.prisma.project.findMany({
+      where: {
+        status: "ACTIVE",
+        OR: [
+          { workspaceId: { in: [...ownerSet] } },
+          { workspaceId: { in: workspaceIds }, members: { some: { userId } } },
+        ],
+      },
+      select: { id: true, name: true, workspaceId: true },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+    });
+
+    return projects.map((p) => ({ ...p, isOwned: ownerSet.has(p.workspaceId) }));
   }),
 
   listAllFull: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
     const memberships = await ctx.prisma.workspaceMember.findMany({
-      where: { userId: ctx.session.user.id },
+      where: { userId },
       select: { workspaceId: true, workspace: { select: { ownerId: true } } },
     });
 
-    const results = await Promise.all(
-      memberships.map(async ({ workspaceId, workspace }) => {
-        const isOwner = workspace.ownerId === ctx.session.user.id;
-        const where = isOwner
-          ? { workspaceId, status: "ACTIVE" as const }
-          : { workspaceId, status: "ACTIVE" as const, members: { some: { userId: ctx.session.user.id } } };
-
-        const projects = await ctx.prisma.project.findMany({
-          where,
-          include: { _count: { select: { tasks: true } }, sprints: { where: { status: "ACTIVE" }, take: 1 } },
-          orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-        });
-
-        return projects.map((p) => ({ ...p, isOwned: isOwner }));
-      })
+    const workspaceIds = memberships.map((m) => m.workspaceId);
+    const ownerSet = new Set(
+      memberships.filter((m) => m.workspace.ownerId === userId).map((m) => m.workspaceId)
     );
 
-    return results.flat();
+    const projects = await ctx.prisma.project.findMany({
+      where: {
+        status: "ACTIVE",
+        OR: [
+          { workspaceId: { in: [...ownerSet] } },
+          { workspaceId: { in: workspaceIds }, members: { some: { userId } } },
+        ],
+      },
+      include: { _count: { select: { tasks: true } }, sprints: { where: { status: "ACTIVE" }, take: 1 } },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+    });
+
+    return projects.map((p) => ({ ...p, isOwned: ownerSet.has(p.workspaceId) }));
   }),
 
   list: protectedProcedure

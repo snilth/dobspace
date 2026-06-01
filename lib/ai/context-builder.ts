@@ -4,16 +4,25 @@ export type ProjectContext = {
   projectName: string;
   taskCounts: { BACKLOG: number; IN_PROGRESS: number; REVIEW: number; DONE: number };
   activeSprint: { name: string; startDate: string; endDate: string; taskCount: number } | null;
-  members: { name: string; permission: string; jobRole?: string }[];
+  members: { name: string; jobRole?: string }[];
   recentTasks: { title: string; status: string; priority: string; assignee?: string; dueDate?: string }[];
   today: string;
 };
 
 export async function buildProjectContext(projectId: string): Promise<ProjectContext> {
-  const [project, tasks, sprint] = await Promise.all([
+  const [projectData, tasks, sprint, projectMembers] = await Promise.all([
     prisma.project.findUnique({
       where: { id: projectId },
-      select: { name: true, workspaceId: true },
+      select: {
+        name: true,
+        workspace: {
+          select: {
+            ownerId: true,
+            owner: { select: { name: true } },
+            members: { select: { userId: true, jobRole: { select: { name: true } } } },
+          },
+        },
+      },
     }),
     prisma.task.findMany({
       where: { projectId },
@@ -31,9 +40,13 @@ export async function buildProjectContext(projectId: string): Promise<ProjectCon
       where: { projectId, status: "ACTIVE" },
       select: { name: true, startDate: true, endDate: true, _count: { select: { tasks: true } } },
     }),
+    prisma.projectMember.findMany({
+      where: { projectId },
+      select: { userId: true, user: { select: { name: true } } },
+    }),
   ]);
 
-  if (!project) {
+  if (!projectData) {
     return {
       projectName: "Unknown",
       taskCounts: { BACKLOG: 0, IN_PROGRESS: 0, REVIEW: 0, DONE: 0 },
@@ -44,46 +57,18 @@ export async function buildProjectContext(projectId: string): Promise<ProjectCon
     };
   }
 
-  const [projectMembers, workspace] = await Promise.all([
-    prisma.projectMember.findMany({
-      where: { projectId },
-      select: {
-        userId: true,
-        permission: true,
-        user: { select: { name: true } },
-      },
-    }),
-    prisma.workspace.findUnique({
-      where: { id: project.workspaceId },
-      select: {
-        ownerId: true,
-        owner: { select: { name: true } },
-        members: {
-          select: {
-            userId: true,
-            jobRole: { select: { name: true } },
-          },
-        },
-      },
-    }),
-  ]);
-
   const jobRoleMap = new Map(
-    workspace?.members.map((m) => [m.userId, m.jobRole?.name]) ?? []
+    projectData.workspace?.members.map((m) => [m.userId, m.jobRole?.name]) ?? []
   );
 
-  const ownerName = workspace?.owner.name;
   const members: ProjectContext["members"] = [];
-
-  if (ownerName) {
-    members.push({ name: ownerName, permission: "OWNER" });
-  }
+  const ownerName = projectData.workspace?.owner.name;
+  if (ownerName) members.push({ name: ownerName });
 
   for (const pm of projectMembers) {
-    if (pm.userId === workspace?.ownerId) continue;
+    if (pm.userId === projectData.workspace?.ownerId) continue;
     members.push({
       name: pm.user.name,
-      permission: pm.permission,
       jobRole: jobRoleMap.get(pm.userId) ?? undefined,
     });
   }
@@ -94,7 +79,7 @@ export async function buildProjectContext(projectId: string): Promise<ProjectCon
   }
 
   return {
-    projectName: project.name,
+    projectName: projectData.name,
     taskCounts,
     activeSprint: sprint
       ? {

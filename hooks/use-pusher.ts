@@ -62,7 +62,7 @@ export function usePusherUserEvent(
     const pusher = getPusherClient();
     if (!pusher) return;
 
-    const channelName = `user-${userId}`;
+    const channelName = `private-user-${userId}`;
     const channel = pusher.subscribe(channelName);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fn = (...args: any[]) => (handlerRef.current as (...a: any[]) => void)(...args);
