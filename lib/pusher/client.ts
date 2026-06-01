@@ -13,7 +13,11 @@ export function getPusherClient(): PusherJs | null {
   if (!_pusher) {
     _pusher = new PusherJs(key, {
       cluster,
-      authEndpoint: "/api/pusher/auth",
+      channelAuthorization: {
+        endpoint: "/api/pusher/auth",
+        transport: "ajax",
+        headersProvider: () => ({ "Content-Type": "application/x-www-form-urlencoded" }),
+      },
     });
   }
   return _pusher;
