@@ -69,7 +69,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
   }, []);
 
   const { data: tasks = [] } = useQuery(
-    trpc.calendar.tasks.queryOptions({ workspaceId, year, month })
+    trpc.calendar.tasks.queryOptions({ workspaceId, year, month }, { refetchInterval: 10_000 })
   );
 
   // Assign stable color index per project

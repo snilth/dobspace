@@ -16,7 +16,7 @@ export function NotificationBell() {
   const active = pathname === "/notifications";
 
   const { data: count = 0 } = useQuery(
-    trpc.notifications.unreadCount.queryOptions(undefined, { refetchInterval: 30_000 })
+    trpc.notifications.unreadCount.queryOptions(undefined, { refetchInterval: 5_000 })
   );
 
   const { data: session } = useSession();
