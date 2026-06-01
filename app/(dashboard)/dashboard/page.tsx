@@ -20,7 +20,7 @@ export default async function DashboardPage() {
     trpc.dashboard.stats({ workspaceId }),
   ]);
 
-  const activeProjects = projects.filter((p) => p.status === "ACTIVE");
+  const activeProjects = projects.filter((p: typeof projects[number]) => p.status === "ACTIVE");
   const donePercent = stats.kpi.total > 0
     ? Math.round((stats.kpi.done / stats.kpi.total) * 100)
     : 0;
