@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, Sparkles, X } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 type Message = {
@@ -110,6 +111,17 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
+      {/* Open button — only shown when closed */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="flex items-center gap-2 px-4 h-10 rounded-xl bg-brand text-brand-foreground shadow-lg hover:bg-brand-dark transition-colors text-[13px] font-semibold"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          AI Assistant
+        </button>
+      )}
+
       {/* Chat box */}
       {open && (
         <div className="w-[340px] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden"
@@ -199,13 +211,6 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
         </div>
       )}
 
-      {/* Toggle button */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-12 h-12 rounded-full bg-brand text-brand-foreground shadow-lg hover:bg-brand-dark transition-colors flex items-center justify-center"
-      >
-        {open ? <X className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
-      </button>
     </div>
   );
 }
