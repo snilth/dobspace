@@ -13,7 +13,7 @@ const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
-  const httpServer = createServer(async (req, res) => {
+  const httpServer = createServer({ maxHeaderSize: 32768 }, async (req, res) => {
     const parsedUrl = parse(req.url!, true);
     await handle(req, res, parsedUrl);
   });
