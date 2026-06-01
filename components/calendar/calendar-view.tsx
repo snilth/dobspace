@@ -30,7 +30,7 @@ type CalendarTask = {
   id: string; title: string; description?: string | null;
   status: "BACKLOG" | "IN_PROGRESS" | "REVIEW" | "DONE";
   priority: "LOW" | "MEDIUM" | "HIGH"; tags: string[];
-  dueDate: Date; sprintId?: string | null; projectId: string;
+  dueDate: string; sprintId?: string | null; projectId: string;
   project: { id: string; name: string };
   assignee: { id: string; name: string; image: string | null; tag: string | null } | null;
 };
