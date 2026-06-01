@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { ChevronLeft, ChevronRight, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,12 @@ const PRIORITY_DOT: Record<string, string> = {
   LOW:    "bg-[oklch(52%_0.2_148)]",
 };
 
+const STATUS_BORDER: Record<string, string> = {
+  IN_PROGRESS: "border-l-[3px] border-l-[oklch(52%_0.22_228)]",
+  REVIEW:      "border-l-[3px] border-l-[oklch(58%_0.2_55)]",
+  BACKLOG:     "border-l-[3px] border-l-[oklch(65%_0.01_258)]",
+};
+
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
@@ -40,9 +46,17 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [hiddenProjects, setHiddenProjects] = useState<Set<string>>(new Set());
+  const [showBacklog, setShowBacklog] = useState(false);
   const [editTask, setEditTask] = useState<CalendarTask | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  function handleTaskUpdated() {
+    setEditTask(null);
+    queryClient.invalidateQueries({ queryKey: trpc.calendar.tasks.queryKey({ workspaceId, year, month }) });
+  }
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -54,7 +68,6 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const trpc = useTRPC();
   const { data: tasks = [] } = useQuery(
     trpc.calendar.tasks.queryOptions({ workspaceId, year, month })
   );
@@ -74,7 +87,10 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
     return [...seen.entries()].map(([id, name]) => ({ id, name }));
   }, [tasks]);
 
-  const visibleTasks = tasks.filter((t) => !hiddenProjects.has(t.project.id));
+  const visibleTasks = tasks.filter((t) =>
+    !hiddenProjects.has(t.project.id) &&
+    (showBacklog ? true : t.status !== "BACKLOG")
+  );
 
   // Build day → tasks map
   const tasksByDay = useMemo(() => {
@@ -131,6 +147,21 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
           </div>
         </div>
 
+        <div className="flex items-center gap-2">
+          {/* Backlog toggle */}
+          <button
+            onClick={() => setShowBacklog((v) => !v)}
+            className={cn(
+              "flex items-center gap-1.5 px-3 h-8 rounded-lg border text-[13px] font-medium transition-colors",
+              showBacklog
+                ? "bg-surface-3 border-border text-foreground"
+                : "bg-card border-border text-muted hover:text-foreground hover:bg-surface-2"
+            )}
+          >
+            <span className="w-2 h-2 rounded-full bg-[oklch(65%_0.01_258)]" />
+            Backlog
+          </button>
+
         {/* Project filter dropdown */}
         {projects.length > 0 && (
           <div className="relative" ref={filterRef}>
@@ -179,6 +210,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Calendar grid — fills remaining height, no outer scroll */}
@@ -211,7 +243,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
                 {isValid && (
                   <>
                     <div className={cn(
-                      "w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-medium flex-shrink-0 mt-1.5 ml-1.5",
+                      "w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-medium flex-shrink-0 mt-2 ml-2 mb-1",
                       isToday(day)
                         ? "bg-brand text-brand-foreground"
                         : "text-foreground"
@@ -219,7 +251,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
                       {day}
                     </div>
 
-                    <div className="flex flex-col gap-1 overflow-y-auto px-1.5 pb-1.5 flex-1 min-h-0">
+                    <div className="flex flex-col gap-1.5 overflow-y-auto px-2 pb-2 flex-1 min-h-0">
                       {dayTasks.map((task) => {
                         const ci = projectColorMap.get(task.project.id) ?? 0;
                         const color = PROJECT_COLORS[ci];
@@ -228,15 +260,16 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
                             key={task.id}
                             onClick={() => setEditTask(task)}
                             className={cn(
-                              "w-full text-left rounded-md px-1.5 py-1 text-[11px] leading-tight transition-opacity hover:opacity-80",
-                              color.bg, color.text
+                              "w-full text-left rounded-lg px-2 py-1.5 text-[11.5px] leading-snug transition-opacity hover:opacity-80",
+                              color.bg, color.text,
+                              STATUS_BORDER[task.status]
                             )}
                           >
-                            <div className="flex items-start gap-1">
-                              <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0 mt-0.5", PRIORITY_DOT[task.priority])} />
+                            <div className="flex items-start gap-1.5">
+                              <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[3px]", PRIORITY_DOT[task.priority])} />
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium truncate">{task.title}</p>
-                                <p className="opacity-70 truncate">{task.project.name}</p>
+                                <p className="font-semibold truncate">{task.title}</p>
+                                <p className="opacity-60 truncate text-[10.5px] mt-0.5">{task.project.name}</p>
                               </div>
                               {task.assignee?.image && (
                                 <img
@@ -272,7 +305,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
           workspaceId={workspaceId}
           canAssign
           onClose={() => setEditTask(null)}
-          onUpdated={() => setEditTask(null)}
+          onUpdated={handleTaskUpdated}
         />
       )}
     </div>
