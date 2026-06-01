@@ -131,7 +131,7 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
           {/* Header */}
           <div className="flex items-center gap-2.5 px-4 h-[52px] border-b border-border flex-shrink-0 bg-surface-2/60">
             <div className="w-7 h-7 rounded-xl bg-brand flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-3.5 h-3.5 text-brand-foreground" />
+              <CatIcon className="w-4 h-4 text-brand-foreground" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-semibold text-foreground leading-none mb-0.5">DobSpace AI</p>
