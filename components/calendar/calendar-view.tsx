@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TaskEditModal } from "@/components/kanban/task-edit-modal";
 import type { BoardTask } from "@/components/kanban/kanban-board";
@@ -41,6 +41,18 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [hiddenProjects, setHiddenProjects] = useState<Set<string>>(new Set());
   const [editTask, setEditTask] = useState<CalendarTask | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const trpc = useTRPC();
   const { data: tasks = [] } = useQuery(
@@ -119,29 +131,52 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
           </div>
         </div>
 
-        {/* Project filter */}
+        {/* Project filter dropdown */}
         {projects.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
-            {projects.map((p) => {
-              const ci = projectColorMap.get(p.id) ?? 0;
-              const color = PROJECT_COLORS[ci];
-              const hidden = hiddenProjects.has(p.id);
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => toggleProject(p.id)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium border transition-all",
-                    hidden
-                      ? "bg-surface-2 text-muted border-border opacity-50"
-                      : `${color.bg} ${color.text} border-transparent`
-                  )}
-                >
-                  <span className={cn("w-2 h-2 rounded-full flex-shrink-0", hidden ? "bg-muted" : color.dot)} />
-                  {p.name}
-                </button>
-              );
-            })}
+          <div className="relative" ref={filterRef}>
+            <button
+              onClick={() => setFilterOpen((v) => !v)}
+              className="flex items-center gap-2 px-3 h-8 rounded-lg border border-border bg-card hover:bg-surface-2 text-[13px] text-foreground transition-colors"
+            >
+              <span>
+                {hiddenProjects.size === 0
+                  ? "All projects"
+                  : `${projects.length - hiddenProjects.size} / ${projects.length}`}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-muted" />
+            </button>
+
+            {filterOpen && (
+              <div className="absolute right-0 top-10 z-20 w-52 rounded-xl border border-border bg-card shadow-lg py-1.5">
+                <div className="flex items-center justify-between px-3 pb-1.5 mb-1 border-b border-border">
+                  <span className="text-[11px] font-semibold text-muted uppercase tracking-wide">Projects</span>
+                  <button
+                    onClick={() => setHiddenProjects(new Set())}
+                    className="text-[11px] text-brand hover:underline"
+                  >
+                    Show all
+                  </button>
+                </div>
+                {projects.map((p) => {
+                  const ci = projectColorMap.get(p.id) ?? 0;
+                  const color = PROJECT_COLORS[ci];
+                  const visible = !hiddenProjects.has(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => toggleProject(p.id)}
+                      className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-surface-2 transition-colors text-left"
+                    >
+                      <span className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", color.dot)} />
+                      <span className={cn("flex-1 text-[13px] truncate", visible ? "text-foreground" : "text-muted line-through")}>
+                        {p.name}
+                      </span>
+                      {visible && <Check className="w-3.5 h-3.5 text-brand flex-shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
