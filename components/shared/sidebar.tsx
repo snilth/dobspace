@@ -75,6 +75,7 @@ export function Sidebar() {
   async function handleSignOut() {
     destroyPusherClient();
     await signOut();
+    queryClient.clear();
     router.push("/login");
   }
 
