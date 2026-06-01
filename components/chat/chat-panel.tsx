@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, Sparkles, X } from "lucide-react";
+import { CatIcon } from "@/components/shared/cat-icon";
 
 import { cn } from "@/lib/utils";
 
@@ -117,8 +118,8 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
           onClick={() => setOpen(true)}
           className="flex items-center gap-2 px-4 h-10 rounded-xl bg-brand text-brand-foreground shadow-lg hover:bg-brand-dark transition-colors text-[13px] font-semibold"
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          AI Assistant
+          <CatIcon className="w-3.5 h-3.5" />
+          DobSpace AI
         </button>
       )}
 
