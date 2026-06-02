@@ -54,12 +54,18 @@ async function notifyMentioned(
   }
 }
 
+const DEFAULT_EVENT_TYPES_MAP: Record<string, boolean> = {
+  assigned: true, status_changed: true, priority_changed: true,
+  due_date_changed: true, commented: true, mentioned: true,
+};
+
 async function getEventPrefs(prisma: PrismaClient, userId: string, workspaceId: string): Promise<Record<string, boolean>> {
   const pref = await prisma.notificationPreference.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
     select: { eventTypes: true },
   });
-  return (pref?.eventTypes ?? {}) as Record<string, boolean>;
+  // Merge with defaults so missing keys default to true (notify), explicit false = disabled
+  return { ...DEFAULT_EVENT_TYPES_MAP, ...(pref?.eventTypes ?? {}) } as Record<string, boolean>;
 }
 
 async function batchEventPrefs(prisma: PrismaClient, userIds: string[], workspaceId: string): Promise<Map<string, Record<string, boolean>>> {
