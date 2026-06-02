@@ -46,9 +46,12 @@ export async function runDeadlineCheck() {
       if (alreadySent) continue;
 
       const dueStr = task.dueDate!.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      const message = `Deadline approaching: "${task.title}" is due ${dueStr}`;
       const notif = await prisma.notification.create({
-        data: { userId: pref.userId, taskId: task.id, type: "DEADLINE_APPROACHING", message },
+        data: {
+          userId: pref.userId, taskId: task.id, type: "DEADLINE_APPROACHING",
+          message: `Deadline approaching for a task`,
+          metadata: { taskTitle: task.title, dueDate: dueStr },
+        },
       });
       emitToUser(pref.userId, "notification:new", {
         id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt,
@@ -97,9 +100,12 @@ export async function runDeadlineCheck() {
       }
 
       const dueStr = task.dueDate!.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      const message = `Overdue: "${task.title}" was due ${dueStr}`;
       const notif = await prisma.notification.create({
-        data: { userId: pref.userId, taskId: task.id, type: "DEADLINE_OVERDUE", message },
+        data: {
+          userId: pref.userId, taskId: task.id, type: "DEADLINE_OVERDUE",
+          message: `A task is overdue`,
+          metadata: { taskTitle: task.title, dueDate: dueStr },
+        },
       });
       emitToUser(pref.userId, "notification:new", {
         id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt,

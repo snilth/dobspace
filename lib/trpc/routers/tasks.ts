@@ -1,9 +1,17 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "@/lib/trpc/init";
 import { TRPCError } from "@trpc/server";
-import { TaskStatus, Priority, Prisma } from "@prisma/client";
+import { TaskStatus, Priority, Prisma, PrismaClient } from "@prisma/client";
 import { requireProjectPermission } from "@/lib/trpc/guards";
 import { emitToProject, emitToUser } from "@/lib/socket/server";
+
+async function getEventPrefs(prisma: PrismaClient, userId: string, workspaceId: string): Promise<Record<string, boolean>> {
+  const pref = await prisma.notificationPreference.findUnique({
+    where: { userId_workspaceId: { userId, workspaceId } },
+    select: { eventTypes: true },
+  });
+  return (pref?.eventTypes ?? {}) as Record<string, boolean>;
+}
 
 const TaskInput = z.object({
   title: z.string().min(1).max(500),
@@ -70,18 +78,19 @@ export const tasksRouter = router({
         });
       }
 
-      // Notify assignees on task creation (skip self-assign)
+      // Notify assignees on task creation (skip self-assign, check preference)
       if (assigneeIds?.length) {
         const assigner = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
         const projectName = project.workspaceId ? (await ctx.prisma.project.findUnique({ where: { id: input.projectId }, select: { name: true } }))?.name : null;
         for (const userId of assigneeIds) {
           if (userId === ctx.session.user.id) continue;
+          const events = await getEventPrefs(ctx.prisma, userId, project.workspaceId);
+          if (events.assigned === false) continue;
           const notif = await ctx.prisma.notification.create({
             data: {
-              userId,
-              taskId: task.id,
-              type: "TASK_ASSIGNED",
-              message: `${assigner?.name ?? "Someone"} assigned "${task.title}" to you${projectName ? ` in ${projectName}` : ""}`,
+              userId, taskId: task.id, type: "TASK_ASSIGNED",
+              message: `${assigner?.name ?? "Someone"} assigned a task to you`,
+              metadata: { actor: assigner?.name ?? "Someone", taskTitle: task.title, project: projectName },
             },
           });
           emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
@@ -157,17 +166,15 @@ export const tasksRouter = router({
       // ── Bundled notification to assignees (not the editor) ──────────────────
       const STATUS_LABEL: Record<string, string> = { BACKLOG: "Backlog", IN_PROGRESS: "In Progress", REVIEW: "In Review", DONE: "Done" };
       const PRIORITY_LABEL: Record<string, string> = { LOW: "Low", MEDIUM: "Medium", HIGH: "High" };
-      const changeParts: string[] = [];
-      if (rest.status && task.status !== rest.status) changeParts.push(`status → ${STATUS_LABEL[rest.status] ?? rest.status}`);
-      if (rest.priority && task.priority !== rest.priority) changeParts.push(`priority → ${PRIORITY_LABEL[rest.priority] ?? rest.priority}`);
-      if (dueDate !== undefined) {
-        changeParts.push(dueDate ? `due date → ${new Date(dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "due date removed");
-      }
-      if (rest.title && rest.title !== task.title) changeParts.push(`renamed to "${rest.title}"`);
+      const metaChanges: Record<string, string> = {};
+      if (rest.status && task.status !== rest.status) metaChanges.status = STATUS_LABEL[rest.status] ?? rest.status;
+      if (rest.priority && task.priority !== rest.priority) metaChanges.priority = PRIORITY_LABEL[rest.priority] ?? rest.priority;
+      if (dueDate !== undefined) metaChanges.dueDate = dueDate ? new Date(dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Removed";
+      if (rest.title && rest.title !== task.title) metaChanges.title = rest.title;
 
-      if (changeParts.length > 0) {
+      if (Object.keys(metaChanges).length > 0) {
         const editor = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
-        const message = `${editor?.name ?? "Someone"} updated "${updated.title}": ${changeParts.join(" · ")}`;
+        const projectName = (await ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } }))?.name ?? null;
         const notifyUserIds = task.assignees.filter(a => a.user.id !== ctx.session.user.id).map(a => a.user.id);
 
         for (const userId of notifyUserIds) {
@@ -176,14 +183,18 @@ export const tasksRouter = router({
           });
           const events = (pref?.eventTypes ?? {}) as Record<string, boolean>;
           const wantsNotif =
-            (rest.status && events.status_changed !== false) ||
-            (rest.priority && events.priority_changed !== false) ||
-            (dueDate !== undefined && events.due_date_changed !== false) ||
-            (rest.title && events.status_changed !== false);
+            (metaChanges.status && events.status_changed !== false) ||
+            (metaChanges.priority && events.priority_changed !== false) ||
+            (metaChanges.dueDate && events.due_date_changed !== false) ||
+            (metaChanges.title && events.status_changed !== false);
 
           if (wantsNotif) {
             const notif = await ctx.prisma.notification.create({
-              data: { userId, taskId: input.id, type: "TASK_UPDATED", message },
+              data: {
+                userId, taskId: input.id, type: "TASK_UPDATED",
+                message: `${editor?.name ?? "Someone"} updated a task`,
+                metadata: { actor: editor?.name ?? "Someone", taskTitle: updated.title, project: projectName, changes: metaChanges },
+              },
             });
             emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
           }
@@ -293,8 +304,10 @@ export const tasksRouter = router({
         data: { workspaceId: task.project.workspaceId, entityType: "TASK", entityId: input.taskId, action: "ASSIGNED", userId: ctx.session.user.id, changes: { assignedUserId: input.userId } },
       });
 
-      // Notify assignee (skip self-assign)
+      // Notify assignee (skip self-assign, check preference)
       if (input.userId !== ctx.session.user.id) {
+        const events = await getEventPrefs(ctx.prisma, input.userId, task.project.workspaceId);
+        if (events.assigned !== false) {
         const [assigner, project] = await Promise.all([
           ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } }),
           ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } }),
@@ -304,7 +317,8 @@ export const tasksRouter = router({
             userId: input.userId,
             taskId: input.taskId,
             type: "TASK_ASSIGNED",
-            message: `${assigner?.name ?? "ไม่ทราบชื่อ"} มอบหมาย "${task.title}" ให้คุณ ใน ${project?.name ?? "project"}`,
+            message: `${assigner?.name ?? "Someone"} assigned a task to you`,
+            metadata: { actor: assigner?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null },
           },
         });
         emitToUser(input.userId, "notification:new", {
@@ -314,6 +328,7 @@ export const tasksRouter = router({
           taskId: notif.taskId,
           createdAt: notif.createdAt,
         });
+        } // end events.assigned check
       }
 
       return assignee;
@@ -433,8 +448,14 @@ export const tasksRouter = router({
       const project = await ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } });
       for (const { userId } of task.assignees) {
         if (userId === ctx.session.user.id) continue;
+        const events = await getEventPrefs(ctx.prisma, userId, task.project.workspaceId);
+        if (events.status_changed === false) continue;
         const notif = await ctx.prisma.notification.create({
-          data: { userId, taskId: input.id, type: "TASK_MOVED", message: `${approver?.name} อนุมัติ "${task.title}" ใน ${project?.name} แล้ว ✅` },
+          data: {
+            userId, taskId: input.id, type: "TASK_MOVED",
+            message: `${approver?.name} approved a task`,
+            metadata: { actor: approver?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null, changes: { status: "Done" } },
+          },
         });
         emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
       }
@@ -464,8 +485,14 @@ export const tasksRouter = router({
       const project = await ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } });
       for (const { userId } of task.assignees) {
         if (userId === ctx.session.user.id) continue;
+        const events = await getEventPrefs(ctx.prisma, userId, task.project.workspaceId);
+        if (events.status_changed === false) continue;
         const notif = await ctx.prisma.notification.create({
-          data: { userId, taskId: input.id, type: "TASK_MOVED", message: `${reviewer?.name} ส่ง "${task.title}" กลับ Backlog ❌ — ${input.reason}` },
+          data: {
+            userId, taskId: input.id, type: "TASK_MOVED",
+            message: `${reviewer?.name} rejected a task`,
+            metadata: { actor: reviewer?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null, changes: { status: "Back to Backlog", reason: input.reason } },
+          },
         });
         emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
       }

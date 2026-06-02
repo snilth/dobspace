@@ -306,6 +306,7 @@ model Notification {
   read        Boolean          @default(false)
   dismissed   Boolean          @default(false)
   dismissedAt DateTime?
+  metadata    Json?
   createdAt   DateTime         @default(now())
 
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -21,10 +21,19 @@ function timeAgo(date: Date | string): string {
   return new Date(date).toLocaleDateString("en-US", { day: "numeric", month: "short" });
 }
 
+type NotifMeta = {
+  actor?: string;
+  taskTitle?: string;
+  project?: string | null;
+  dueDate?: string;
+  changes?: Record<string, string>;
+};
+
 type Notif = {
   id: string;
   type: string;
   message: string;
+  metadata?: NotifMeta | null;
   read: boolean;
   createdAt: Date | string;
   task?: { projectId: string; project?: { name: string } | null } | null;
@@ -229,27 +238,57 @@ function NotifRow({ notification: n, onMarkRead, onMarkUnread, onDismiss }: {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <span className={cn("text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md", cfg.bg, cfg.color)}>
-            {cfg.label}
-          </span>
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className={cn("text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md", cfg.bg, cfg.color)}>
+              {cfg.label}
+            </span>
+            {n.metadata?.actor && (
+              <span className="text-[11px] text-muted">by <span className="font-semibold text-foreground-2">{n.metadata.actor}</span></span>
+            )}
+          </div>
           <span className="text-[11px] text-muted flex-shrink-0">{timeAgo(n.createdAt)}</span>
         </div>
-        <p className={cn("text-[13px] leading-snug mb-1.5", n.read ? "text-muted" : "text-foreground font-medium")}>{n.message}</p>
-        <div className="flex items-center gap-2 flex-wrap">
-          {n.task?.project && (
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-surface-3 text-muted-2">
-              {n.task.project.name}
-            </span>
-          )}
-          {n.task && (
-            <Link href={`/projects/${n.task.projectId}`}
-              className="text-[11px] text-brand font-semibold hover:underline flex items-center gap-0.5">
-              <ExternalLink className="w-2.5 h-2.5" />
-              View task
-            </Link>
-          )}
-        </div>
+
+        {/* Task title */}
+        {(n.metadata?.taskTitle ?? n.message) && (
+          <p className={cn("text-[14px] font-semibold leading-snug mb-2", n.read ? "text-foreground-2" : "text-foreground")}>
+            {n.metadata?.taskTitle ?? n.message}
+          </p>
+        )}
+
+        {/* Structured metadata */}
+        {n.metadata && (
+          <div className="space-y-1 mb-2">
+            {n.metadata.project && (
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="text-muted w-16 flex-shrink-0">Project</span>
+                <span className="font-medium text-foreground-2">{n.metadata.project}</span>
+              </div>
+            )}
+            {n.metadata.dueDate && (
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="text-muted w-16 flex-shrink-0">Due date</span>
+                <span className="font-medium text-foreground-2">{n.metadata.dueDate}</span>
+              </div>
+            )}
+            {n.metadata.changes && Object.entries(n.metadata.changes).map(([key, val]) => (
+              <div key={key} className="flex items-center gap-2 text-[12px]">
+                <span className="text-muted w-16 flex-shrink-0 capitalize">{key === "dueDate" ? "Due date" : key}</span>
+                <span className="font-medium text-foreground-2">{val}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* View task link */}
+        {n.task && (
+          <Link href={`/projects/${n.task.projectId}`}
+            className="text-[11px] text-brand font-semibold hover:underline flex items-center gap-0.5 w-fit">
+            <ExternalLink className="w-2.5 h-2.5" />
+            View task
+          </Link>
+        )}
       </div>
 
       {/* Actions */}
