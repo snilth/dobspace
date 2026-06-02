@@ -1,9 +1,13 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useTRPC } from "@/lib/trpc/client";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 type Theme = "light" | "dark" | "system";
 export type Accent = "indigo" | "yellow" | "blue" | "pink" | "green" | "kimmy";
+
+const VALID_ACCENTS: Accent[] = ["indigo", "yellow", "blue", "pink", "green", "kimmy"];
 
 type ThemeContextValue = {
   theme: Theme;
@@ -34,21 +38,41 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
   const [accent, setAccentState] = useState<Accent>("indigo");
   const [sidebarSticky, setSidebarStickyState] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const trpc = useTRPC();
+  const { data: serverTheme } = useQuery(trpc.userTheme.get.queryOptions());
+  const { mutate: saveTheme } = useMutation(trpc.userTheme.set.mutationOptions());
+
+  // Init from localStorage on mount
   useEffect(() => {
     const stored = (localStorage.getItem("theme") as Theme) ?? "system";
     setThemeState(stored);
     applyTheme(stored);
 
-    const VALID: Accent[] = ["indigo", "yellow", "blue", "pink", "green", "kimmy"];
     const raw = localStorage.getItem("accent") as Accent;
-    const storedAccent = VALID.includes(raw) ? raw : "indigo";
-    if (!VALID.includes(raw)) localStorage.setItem("accent", "indigo");
+    const storedAccent = VALID_ACCENTS.includes(raw) ? raw : "indigo";
+    if (!VALID_ACCENTS.includes(raw)) localStorage.setItem("accent", "indigo");
     setAccentState(storedAccent);
     applyAccent(storedAccent);
 
     setSidebarStickyState(localStorage.getItem("sidebar-sticky") === "true");
   }, []);
+
+  // Sync from server once loaded — server wins over localStorage
+  useEffect(() => {
+    if (!serverTheme) return;
+    if (serverTheme.accent && VALID_ACCENTS.includes(serverTheme.accent)) {
+      setAccentState(serverTheme.accent);
+      localStorage.setItem("accent", serverTheme.accent);
+      applyAccent(serverTheme.accent);
+    }
+    if (serverTheme.mode) {
+      setThemeState(serverTheme.mode as Theme);
+      localStorage.setItem("theme", serverTheme.mode);
+      applyTheme(serverTheme.mode as Theme);
+    }
+  }, [serverTheme]);
 
   function applyTheme(t: Theme) {
     const isDark =
@@ -66,16 +90,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  function scheduleSave(patch: { accent?: Accent; mode?: Theme }) {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => saveTheme(patch), 800);
+  }
+
   function setTheme(t: Theme) {
     setThemeState(t);
     localStorage.setItem("theme", t);
     applyTheme(t);
+    scheduleSave({ mode: t });
   }
 
   function setAccent(a: Accent) {
     setAccentState(a);
     localStorage.setItem("accent", a);
     applyAccent(a);
+    scheduleSave({ accent: a });
   }
 
   function setSidebarSticky(v: boolean) {

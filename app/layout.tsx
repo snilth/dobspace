@@ -18,7 +18,7 @@ const themeScript = `(function(){
     var t = localStorage.getItem("theme");
     var isDark = t === "dark" || (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
     if (isDark) document.documentElement.classList.add("dark");
-    var valid = ["yellow","blue","pink","green"];
+    var valid = ["yellow","blue","pink","green","kimmy"];
     var a = localStorage.getItem("accent");
     if (a && valid.indexOf(a) !== -1) document.documentElement.setAttribute("data-accent", a);
     else if (a && valid.indexOf(a) === -1) localStorage.removeItem("accent");
