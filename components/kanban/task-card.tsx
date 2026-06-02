@@ -322,7 +322,7 @@ function NotePopover({ title, note, pos, onClose }: {
       <div className="px-4 py-4">
         <div
           className="max-h-56 overflow-y-auto pr-3"
-          style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-brand-muted) transparent" }}
+          style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-border-strong) transparent" }}
         >
           <div className="flex gap-3">
             <div className="w-[3px] rounded-full bg-brand flex-shrink-0 self-stretch" />

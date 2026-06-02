@@ -77,6 +77,7 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
       title: updated.title,
       priority: updated.priority as BoardTask["priority"],
       tags: updated.tags,
+      note: updated.note ?? null,
       dueDate: updated.dueDate ? new Date(updated.dueDate) : null,
       assignee: firstAssignee ? { id: firstAssignee.id, name: firstAssignee.name, image: firstAssignee.image } : null,
     });

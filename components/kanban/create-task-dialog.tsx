@@ -50,6 +50,7 @@ export function CreateTaskDialog({
           projectId,
           title: newTask.title,
           description: newTask.description,
+          note: newTask.note ?? null,
           status: newTask.status as TaskStatus,
           priority: newTask.priority as BoardTask["priority"],
           tags: newTask.tags,
