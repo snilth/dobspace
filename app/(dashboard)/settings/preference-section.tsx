@@ -2,8 +2,11 @@
 
 import { Sun, Moon, Monitor, PanelLeft } from "lucide-react";
 import { useTheme, type Accent } from "@/components/shared/theme-provider";
+import { useSession } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import { Section } from "./account-section";
+
+const KIMMY_ALLOWED = ["kimmy@email.dev", "vivi@email.dev"];
 
 const MODES = [
   { value: "light" as const, icon: Sun, label: "Light" },
@@ -11,16 +14,26 @@ const MODES = [
   { value: "system" as const, icon: Monitor, label: "System" },
 ];
 
-const ACCENTS: { value: Accent; label: string; color: string; ring: string }[] = [
+const BASE_ACCENTS: { value: Accent; label: string; color: string; ring: string }[] = [
   { value: "indigo", label: "Indigo", color: "bg-[oklch(57%_0.245_278)]", ring: "ring-[oklch(57%_0.245_278)]" },
-  { value: "yellow", label: "Yellow", color: "bg-[oklch(72%_0.18_88)]",  ring: "ring-[oklch(72%_0.18_88)]"  },
-  { value: "blue",   label: "Blue",   color: "bg-[oklch(55%_0.22_228)]", ring: "ring-[oklch(55%_0.22_228)]" },
-  { value: "pink",   label: "Pink",   color: "bg-[oklch(57%_0.22_345)]", ring: "ring-[oklch(57%_0.22_345)]" },
-  { value: "green",  label: "Green",  color: "bg-[oklch(52%_0.19_148)]", ring: "ring-[oklch(52%_0.19_148)]" },
+  { value: "yellow", label: "Yellow", color: "bg-[oklch(72%_0.18_88)]",   ring: "ring-[oklch(72%_0.18_88)]"  },
+  { value: "blue",   label: "Blue",   color: "bg-[oklch(55%_0.22_228)]",  ring: "ring-[oklch(55%_0.22_228)]" },
+  { value: "pink",   label: "Pink",   color: "bg-[oklch(60%_0.22_345)]",  ring: "ring-[oklch(60%_0.22_345)]" },
+  { value: "green",  label: "Green",  color: "bg-[oklch(52%_0.19_148)]",  ring: "ring-[oklch(52%_0.19_148)]" },
 ];
+
+const KIMMY_ACCENT = {
+  value: "kimmy" as Accent,
+  label: "Kimmy 🐱",
+  color: "bg-[#FAACBF]",
+  ring: "ring-[#FAACBF]",
+};
 
 export function PreferenceSection() {
   const { theme, setTheme, accent, setAccent, sidebarSticky, setSidebarSticky } = useTheme();
+  const { data: session } = useSession();
+  const isKimmy = KIMMY_ALLOWED.includes(session?.user.email ?? "");
+  const ACCENTS = isKimmy ? [...BASE_ACCENTS, KIMMY_ACCENT] : BASE_ACCENTS;
 
   return (
     <Section title="Preferences" description="Appearance and display settings">

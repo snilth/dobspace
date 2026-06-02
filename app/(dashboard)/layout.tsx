@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { SidebarWrapper } from "@/components/shared/sidebar-wrapper";
 import { ChatPanel } from "@/components/chat/chat-panel";
+import { WalkingCat } from "@/components/shared/walking-cat";
 import { createServerCaller } from "@/lib/trpc/server";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +19,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <SidebarWrapper />
       <main className="flex-1 overflow-y-auto bg-surface">{children}</main>
       {workspace && <ChatPanel workspaceId={workspace.id} />}
+      <WalkingCat />
     </div>
   );
 }

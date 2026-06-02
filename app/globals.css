@@ -120,18 +120,84 @@
 }
 
 :root[data-accent="pink"] {
-  --color-brand: oklch(57% 0.22 345);
-  --color-brand-light: oklch(68% 0.17 345);
-  --color-brand-dark: oklch(46% 0.22 345);
+  --color-brand: oklch(60% 0.22 345);
+  --color-brand-light: oklch(71% 0.17 345);
+  --color-brand-dark: oklch(48% 0.22 345);
   --color-brand-foreground: oklch(99% 0.005 345);
-  --color-brand-subtle: oklch(96% 0.03 345);
-  --color-brand-muted: oklch(89% 0.08 345);
+  --color-brand-subtle: oklch(96% 0.04 345);
+  --color-brand-muted: oklch(89% 0.09 345);
   --color-sidebar-active: oklch(22% 0.055 345);
   --color-sidebar-active-text: oklch(78% 0.12 345);
 }
 :root.dark[data-accent="pink"] {
-  --color-brand-subtle: oklch(20% 0.055 345);
-  --color-brand-muted: oklch(30% 0.08 345);
+  --color-brand-subtle: oklch(22% 0.06 345);
+  --color-brand-muted: oklch(32% 0.09 345);
+}
+
+/* ─── Kimmy theme (kawaii — kimmy@email.dev only) ──────────────────────────── */
+:root[data-accent="kimmy"] {
+  --color-brand: oklch(76% 0.115 356);
+  --color-brand-light: oklch(85% 0.082 356);
+  --color-brand-dark: oklch(70% 0.125 356);
+  --color-brand-foreground: oklch(99% 0.005 356);
+  --color-brand-subtle: oklch(96.5% 0.030 4);
+  --color-brand-muted: oklch(91% 0.060 4);
+
+  --background: oklch(97.5% 0.025 8);
+  --foreground: oklch(24% 0.022 350);
+  --color-surface: oklch(98.5% 0.018 10);
+  --color-surface-2: oklch(95.5% 0.038 8);
+  --color-surface-3: oklch(92% 0.052 8);
+  --color-card: oklch(99.5% 0.010 6);
+  --color-border: oklch(89% 0.046 6);
+  --color-border-strong: oklch(82% 0.065 356);
+  --color-foreground: oklch(24% 0.022 350);
+  --color-foreground-2: oklch(40% 0.026 352);
+  --color-muted: oklch(61% 0.022 354);
+  --color-muted-2: oklch(73% 0.014 4);
+
+  --color-sidebar: oklch(96% 0.036 8);
+  --color-sidebar-surface: oklch(93% 0.050 6);
+  --color-sidebar-foreground: oklch(26% 0.026 350);
+  --color-sidebar-muted: oklch(60% 0.022 354);
+  --color-sidebar-border: oklch(89% 0.052 6);
+  --color-sidebar-hover: oklch(91% 0.055 6);
+  --color-sidebar-active: oklch(86% 0.078 356);
+  --color-sidebar-active-text: oklch(42% 0.13 356);
+}
+
+:root.dark[data-accent="kimmy"] {
+  /* Brand — bright pink on dark */
+  --color-brand: oklch(82% 0.105 356);
+  --color-brand-light: oklch(88% 0.075 356);
+  --color-brand-dark: oklch(72% 0.115 356);
+  --color-brand-foreground: oklch(28% 0.055 356);
+  --color-brand-subtle: oklch(22% 0.065 345);
+  --color-brand-muted: oklch(33% 0.085 345);
+
+  /* Surfaces — same structure as default dark, hue 345 */
+  --background: oklch(16% 0.015 345);
+  --foreground: oklch(93% 0.008 356);
+  --color-surface: oklch(18% 0.018 344);
+  --color-surface-2: oklch(21% 0.020 342);
+  --color-surface-3: oklch(25% 0.022 340);
+  --color-card: oklch(20% 0.018 344);
+  --color-border: oklch(30% 0.020 342);
+  --color-border-strong: oklch(40% 0.022 342);
+  --color-foreground: oklch(93% 0.008 356);
+  --color-foreground-2: oklch(72% 0.012 354);
+  --color-muted: oklch(54% 0.010 352);
+  --color-muted-2: oklch(40% 0.008 348);
+
+  /* Sidebar — same structure as default dark, hue 345 */
+  --color-sidebar: oklch(13% 0.012 347);
+  --color-sidebar-surface: oklch(16% 0.015 345);
+  --color-sidebar-foreground: oklch(86% 0.010 356);
+  --color-sidebar-muted: oklch(48% 0.012 352);
+  --color-sidebar-border: oklch(20% 0.016 344);
+  --color-sidebar-hover: oklch(19% 0.018 343);
+  --color-sidebar-active: oklch(24% 0.070 345);
+  --color-sidebar-active-text: oklch(80% 0.10 356);
 }
 
 :root[data-accent="green"] {
@@ -162,6 +228,13 @@
   }
 }
 
+@keyframes zzz-rise {
+  0%   { opacity: 0; transform: translate(0px, 0px) scale(0.5); }
+  15%  { opacity: 1; }
+  85%  { opacity: 0.7; }
+  100% { opacity: 0; transform: translate(-6px, -22px) scale(1.3); }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -190,4 +263,16 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(73% 0.009 258);
+}
+:root[data-accent="kimmy"] ::-webkit-scrollbar-thumb {
+  background: oklch(86% 0.055 356);
+}
+:root.dark[data-accent="kimmy"] ::-webkit-scrollbar-thumb {
+  background: oklch(32% 0.072 345);
+}
+:root[data-accent="kimmy"] ::-webkit-scrollbar-thumb:hover {
+  background: oklch(80% 0.075 356);
+}
+:root.dark[data-accent="kimmy"] ::-webkit-scrollbar-thumb:hover {
+  background: oklch(40% 0.085 345);
 }

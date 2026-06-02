@@ -10,6 +10,7 @@ import { useTRPC } from "@/lib/trpc/client";
 import type { BoardTask } from "./kanban-board";
 import { TaskEditModal } from "./task-edit-modal";
 import { RejectModal } from "./reject-modal";
+import { PixelPriorityIcon } from "@/components/shared/pixel-icons";
 
 const PRIORITY_BAR: Record<string, string> = {
   LOW: "bg-priority-low",
@@ -83,9 +84,10 @@ export function TaskCard({ task, workspaceId = "", canAssign = false, permission
         <div className="pl-4 pr-3 pt-3 pb-3">
           {/* Top row */}
           <div className="flex items-center justify-between mb-2.5 gap-2">
-            <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-md border", PRIORITY_BADGE[task.priority])}>
+            <div className={cn("flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md border", PRIORITY_BADGE[task.priority])}>
+              <PixelPriorityIcon priority={task.priority} />
               {PRIORITY_LABELS[task.priority]}
-            </span>
+            </div>
             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               {confirmDelete ? (
                 /* Confirm state */

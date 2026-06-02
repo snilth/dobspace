@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "light" | "dark" | "system";
-export type Accent = "indigo" | "yellow" | "blue" | "pink" | "green";
+export type Accent = "indigo" | "yellow" | "blue" | "pink" | "green" | "kimmy";
 
 type ThemeContextValue = {
   theme: Theme;
@@ -40,7 +40,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeState(stored);
     applyTheme(stored);
 
-    const VALID: Accent[] = ["indigo", "yellow", "blue", "pink", "green"];
+    const VALID: Accent[] = ["indigo", "yellow", "blue", "pink", "green", "kimmy"];
     const raw = localStorage.getItem("accent") as Accent;
     const storedAccent = VALID.includes(raw) ? raw : "indigo";
     if (!VALID.includes(raw)) localStorage.setItem("accent", "indigo");

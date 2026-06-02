@@ -43,25 +43,25 @@ function LoginForm() {
             <div className="w-9 h-9 rounded-xl bg-brand flex items-center justify-center shadow-md shadow-brand/30">
               <CatIcon className="w-5 h-5 text-brand-foreground" />
             </div>
-            <span className="font-bold text-white text-lg tracking-tight">DobSpace</span>
+            <span className="font-bold text-sidebar-foreground text-lg tracking-tight">DobSpace</span>
           </div>
 
-          <h2 className="text-3xl font-bold text-white mb-3 leading-snug">
+          <h2 className="text-3xl font-bold text-sidebar-foreground mb-3 leading-snug">
             Welcome<br />back.
           </h2>
-          <p className="text-[oklch(52%_0.01_258)] text-sm leading-relaxed">
+          <p className="text-sidebar-muted text-sm leading-relaxed">
             Your team is waiting. Pick up right where you left off.
           </p>
 
-          <div className="mt-10 p-4 rounded-xl border border-[oklch(22%_0.015_258)] bg-[oklch(16%_0.015_258)]">
-            <p className="text-xs text-[oklch(48%_0.01_258)] mb-1 font-semibold uppercase tracking-wider">Security</p>
-            <p className="text-xs text-[oklch(58%_0.01_258)] leading-relaxed">
+          <div className="mt-10 p-4 rounded-xl border border-sidebar-border bg-sidebar-surface">
+            <p className="text-xs text-sidebar-muted mb-1 font-semibold uppercase tracking-wider">Security</p>
+            <p className="text-xs text-sidebar-muted leading-relaxed">
               All data is encrypted at rest and in transit. Sessions expire automatically after 7 days.
             </p>
           </div>
         </div>
 
-        <p className="text-[10px] text-[oklch(32%_0.008_258)]">© 2026 DobSpace. All rights reserved.</p>
+        <p className="text-[10px] text-sidebar-muted/60">© 2026 DobSpace. All rights reserved.</p>
       </div>
 
       {/* Right panel */}

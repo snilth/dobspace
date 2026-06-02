@@ -91,7 +91,7 @@ export function Sidebar() {
           <div className="w-7 h-7 rounded-xl bg-brand flex items-center justify-center flex-shrink-0">
             <CatIcon className="w-4 h-4 text-brand-foreground" />
           </div>
-          <span className="font-bold text-white tracking-tight text-[15px] whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-150">
+          <span className="font-bold text-sidebar-foreground tracking-tight text-[15px] whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-150">
             DobSpace
           </span>
         </div>
@@ -190,7 +190,7 @@ export function Sidebar() {
               <p className="text-[12px] text-sidebar-foreground font-semibold truncate whitespace-nowrap leading-none">{userName}</p>
             </div>
             <button onClick={handleSignOut}
-              className="w-6 h-6 rounded-md hover:bg-sidebar-border flex items-center justify-center transition-colors text-sidebar-muted hover:text-white opacity-0 group-hover/sidebar:opacity-100 flex-shrink-0"
+              className="w-6 h-6 rounded-md hover:bg-sidebar-border flex items-center justify-center transition-colors text-sidebar-muted hover:text-sidebar-foreground opacity-0 group-hover/sidebar:opacity-100 flex-shrink-0"
               title="Sign out"
             >
               <LogOut className="w-3 h-3" />
@@ -331,8 +331,8 @@ function ProjectLink({ project, pathname }: { project: Project; pathname: string
         active ? "bg-sidebar-active text-sidebar-active-text" : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground"
       )}
     >
-      <div className={cn("w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0", active ? "bg-brand/40" : "bg-[oklch(22%_0.02_228)]")}>
-        <UserCircle2 className={cn("w-2.5 h-2.5", active ? "text-brand-light" : "text-[oklch(55%_0.08_228)]")} />
+      <div className={cn("w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0", active ? "bg-brand/40" : "bg-sidebar-surface")}>
+        <UserCircle2 className={cn("w-2.5 h-2.5", active ? "text-brand-light" : "text-sidebar-muted")} />
       </div>
       <span className="flex-1 truncate whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-150">{project.name}</span>
       <ChevronRight className="w-3 h-3 flex-shrink-0 opacity-0 group-hover/item:opacity-40 transition-opacity" />

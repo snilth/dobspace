@@ -79,24 +79,24 @@ function RegisterForm() {
             <div className="w-9 h-9 rounded-xl bg-brand flex items-center justify-center shadow-md shadow-brand/30">
               <CatIcon className="w-5 h-5 text-brand-foreground" />
             </div>
-            <span className="font-bold text-white text-lg tracking-tight">DobSpace</span>
+            <span className="font-bold text-sidebar-foreground text-lg tracking-tight">DobSpace</span>
           </div>
-          <h2 className="text-3xl font-bold text-white mb-3 leading-snug">
+          <h2 className="text-3xl font-bold text-sidebar-foreground mb-3 leading-snug">
             Ship faster,<br />together.
           </h2>
-          <p className="text-[oklch(52%_0.01_258)] text-sm leading-relaxed">
+          <p className="text-sidebar-muted text-sm leading-relaxed">
             Kanban boards, AI-powered insights, and real-time collaboration — all in one place.
           </p>
           <div className="mt-10 space-y-3">
             {["Real-time Kanban board", "AI assistant that knows your project", "Sprint tracking & team workload"].map((feat) => (
               <div key={feat} className="flex items-center gap-3">
                 <CheckCircle2 className="w-4 h-4 text-brand flex-shrink-0" />
-                <span className="text-sm text-[oklch(65%_0.01_258)]">{feat}</span>
+                <span className="text-sm text-sidebar-muted">{feat}</span>
               </div>
             ))}
           </div>
         </div>
-        <p className="text-[10px] text-[oklch(32%_0.008_258)]">© 2026 DobSpace. All rights reserved.</p>
+        <p className="text-[10px] text-sidebar-muted/60">© 2026 DobSpace. All rights reserved.</p>
       </div>
 
       {/* Right panel */}
