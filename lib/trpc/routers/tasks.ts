@@ -566,9 +566,9 @@ export const tasksRouter = router({
         if (events.status_changed === false) continue;
         const notif = await ctx.prisma.notification.create({
           data: {
-            userId, taskId: input.id, type: "TASK_MOVED",
+            userId, taskId: input.id, type: "TASK_APPROVED",
             message: `${approver?.name} approved a task`,
-            metadata: { actor: approver?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null, changes: { status: "Done" } },
+            metadata: { actor: approver?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null, changes: { status: "Done ✓" } },
           },
         });
         emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
@@ -603,7 +603,7 @@ export const tasksRouter = router({
         if (events.status_changed === false) continue;
         const notif = await ctx.prisma.notification.create({
           data: {
-            userId, taskId: input.id, type: "TASK_MOVED",
+            userId, taskId: input.id, type: "TASK_REJECTED",
             message: `${reviewer?.name} rejected a task`,
             metadata: { actor: reviewer?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null, changes: { status: "Back to Backlog" }, reason: input.reason },
           },
