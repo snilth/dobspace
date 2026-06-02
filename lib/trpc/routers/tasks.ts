@@ -220,7 +220,11 @@ export const tasksRouter = router({
     .mutation(async ({ ctx, input }) => {
       const task = await ctx.prisma.task.findUnique({
         where: { id: input.id },
-        select: { projectId: true, status: true, project: { select: { workspaceId: true } } },
+        select: {
+          title: true, projectId: true, status: true,
+          project: { select: { workspaceId: true, name: true } },
+          assignees: { select: { userId: true } },
+        },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
       await requireProjectPermission(ctx.prisma, ctx.session.user.id, task.projectId, "EDITOR");
@@ -239,6 +243,28 @@ export const tasksRouter = router({
             changes: { status: { before: task.status, after: input.status } },
           },
         });
+
+        // Notify assignees of status change
+        const STATUS_LABEL: Record<string, string> = { BACKLOG: "Backlog", IN_PROGRESS: "In Progress", REVIEW: "In Review", DONE: "Done" };
+        const mover = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
+        for (const { userId } of task.assignees) {
+          if (userId === ctx.session.user.id) continue;
+          const events = await getEventPrefs(ctx.prisma, userId, task.project.workspaceId);
+          if (events.status_changed === false) continue;
+          const notif = await ctx.prisma.notification.create({
+            data: {
+              userId, taskId: input.id, type: "TASK_MOVED",
+              message: `${mover?.name ?? "Someone"} moved a task`,
+              metadata: {
+                actor: mover?.name ?? "Someone",
+                taskTitle: task.title,
+                project: task.project.name,
+                changes: { status: STATUS_LABEL[input.status] ?? input.status },
+              },
+            },
+          });
+          emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+        }
       }
 
       emitToProject(task.projectId, "task:moved", {
