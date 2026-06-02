@@ -26,6 +26,7 @@ type NotifMeta = {
   taskTitle?: string;
   project?: string | null;
   dueDate?: string;
+  reason?: string;
   changes?: Record<string, string>;
 };
 
@@ -278,6 +279,14 @@ function NotifRow({ notification: n, onMarkRead, onMarkUnread, onDismiss }: {
             </div>
           ))}
         </div>
+
+        {/* Rejection reason */}
+        {meta?.reason && (
+          <div className="flex items-start gap-2 text-[12px] mb-2">
+            <span className="text-muted w-16 flex-shrink-0">Reason</span>
+            <span className="text-foreground-2 italic">{meta.reason}</span>
+          </div>
+        )}
 
         {/* View task link */}
         {n.task && (

@@ -35,6 +35,14 @@ async function notifyMentioned(
     if (!names.includes(firstName)) continue;
     const events = await getEventPrefs(prisma, user.id, workspaceId);
     if (events.mentioned === false) continue;
+
+    // Dedup: skip if already mentioned in this task within the last hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const alreadyMentioned = await prisma.notification.findFirst({
+      where: { userId: user.id, taskId, type: "TASK_COMMENTED", dismissed: false, createdAt: { gte: oneHourAgo } },
+    });
+    if (alreadyMentioned) continue;
+
     const notif = await prisma.notification.create({
       data: {
         userId: user.id, taskId, type: "TASK_COMMENTED",
@@ -52,6 +60,16 @@ async function getEventPrefs(prisma: PrismaClient, userId: string, workspaceId: 
     select: { eventTypes: true },
   });
   return (pref?.eventTypes ?? {}) as Record<string, boolean>;
+}
+
+async function batchEventPrefs(prisma: PrismaClient, userIds: string[], workspaceId: string): Promise<Map<string, Record<string, boolean>>> {
+  const prefs = await prisma.notificationPreference.findMany({
+    where: { userId: { in: userIds }, workspaceId },
+    select: { userId: true, eventTypes: true },
+  });
+  const map = new Map<string, Record<string, boolean>>();
+  for (const p of prefs) map.set(p.userId, (p.eventTypes ?? {}) as Record<string, boolean>);
+  return map;
 }
 
 const TaskInput = z.object({
@@ -223,11 +241,10 @@ export const tasksRouter = router({
         const projectName = (await ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } }))?.name ?? null;
         const notifyUserIds = task.assignees.filter(a => a.user.id !== ctx.session.user.id).map(a => a.user.id);
 
+        const prefMap = await batchEventPrefs(ctx.prisma, notifyUserIds, task.project.workspaceId);
+
         for (const userId of notifyUserIds) {
-          const pref = await ctx.prisma.notificationPreference.findUnique({
-            where: { userId_workspaceId: { userId, workspaceId: task.project.workspaceId } },
-          });
-          const events = (pref?.eventTypes ?? {}) as Record<string, boolean>;
+          const events = prefMap.get(userId) ?? {};
 
           // Filter changes to only what this user wants to receive
           const allowedChanges: Record<string, string> = {};
@@ -573,7 +590,7 @@ export const tasksRouter = router({
           data: {
             userId, taskId: input.id, type: "TASK_MOVED",
             message: `${reviewer?.name} rejected a task`,
-            metadata: { actor: reviewer?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null, changes: { status: "Back to Backlog", reason: input.reason } },
+            metadata: { actor: reviewer?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null, changes: { status: "Back to Backlog" }, reason: input.reason },
           },
         });
         emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });

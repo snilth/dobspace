@@ -33,8 +33,10 @@ const EVENT_LABELS: Record<keyof EventTypes, string> = {
   priority_changed: "Task priority changed",
   due_date_changed: "Due date changed",
   commented: "Comment on your task",
-  mentioned: "Someone mentioned you",
+  mentioned: "Someone mentioned you (@mention in notes)",
 };
+
+const COMING_SOON: Set<keyof EventTypes> = new Set(["commented"]);
 
 const HOURS_OPTIONS = [
   { value: 2, label: "2 hours" },
@@ -111,13 +113,20 @@ export function NotificationSection({ workspaceId, initial }: Props) {
         </div>
         <div className="space-y-2">
           {(Object.keys(EVENT_LABELS) as (keyof EventTypes)[]).map((key) => (
-            <Toggle
-              key={key}
-              label={EVENT_LABELS[key]}
-              checked={events[key]}
-              onChange={() => toggleEvent(key)}
-              disabled={update.isPending}
-            />
+            COMING_SOON.has(key) ? (
+              <div key={key} className="flex items-center justify-between py-1.5">
+                <span className="text-[13px] text-muted">{EVENT_LABELS[key]}</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-3 text-muted-2">Coming soon</span>
+              </div>
+            ) : (
+              <Toggle
+                key={key}
+                label={EVENT_LABELS[key]}
+                checked={events[key]}
+                onChange={() => toggleEvent(key)}
+                disabled={update.isPending}
+              />
+            )
           ))}
         </div>
       </div>
