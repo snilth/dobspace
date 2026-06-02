@@ -88,6 +88,10 @@ export function SprintDetail({
   const [editName, setEditName] = useState(false);
   const [nameVal, setNameVal] = useState(sprint.name);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [editEndDate, setEditEndDate] = useState(false);
+  const [endDateVal, setEndDateVal] = useState(
+    new Date(sprint.endDate).toISOString().split("T")[0]
+  );
 
   const { data: detail } = useQuery({
     ...trpc.sprint.get.queryOptions({ sprintId: sprint.id }),
@@ -178,9 +182,47 @@ export function SprintDetail({
               )}
             </div>
           )}
-          <div className="flex items-center gap-3 mt-1.5">
+          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
             <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full", meta.badge)}>{meta.label}</span>
-            <span className="text-[12px] text-muted">{fmt(sprint.startDate)} – {fmt(sprint.endDate)}</span>
+            <span className="text-[12px] text-muted">{fmt(sprint.startDate)} –</span>
+            {canManage && sprint.status === "ACTIVE" && editEndDate ? (
+              <form
+                className="flex items-center gap-1.5"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (endDateVal) {
+                    updateSprint.mutate({ sprintId: sprint.id, endDate: new Date(endDateVal).toISOString() });
+                    setEditEndDate(false);
+                  }
+                }}
+              >
+                <input
+                  autoFocus
+                  type="date"
+                  value={endDateVal}
+                  min={new Date(sprint.startDate).toISOString().split("T")[0]}
+                  onChange={(e) => setEndDateVal(e.target.value)}
+                  className="h-6 px-2 rounded-md border border-border bg-surface-2 text-[12px] text-foreground focus:outline-none focus:ring-2 focus:ring-brand/30"
+                />
+                <button type="submit" disabled={updateSprint.isPending} className="w-6 h-6 rounded-md bg-brand text-brand-foreground flex items-center justify-center hover:opacity-90">
+                  {updateSprint.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                </button>
+                <button type="button" onClick={() => setEditEndDate(false)} className="w-6 h-6 rounded-md hover:bg-surface-3 flex items-center justify-center text-muted">
+                  <X className="w-3 h-3" />
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={() => canManage && sprint.status === "ACTIVE" ? setEditEndDate(true) : undefined}
+                className={cn(
+                  "text-[12px] text-muted",
+                  canManage && sprint.status === "ACTIVE" && "hover:text-foreground hover:underline decoration-dashed underline-offset-2 cursor-pointer transition-colors"
+                )}
+                title={canManage && sprint.status === "ACTIVE" ? "Click to extend end date" : undefined}
+              >
+                {fmt(sprint.endDate)}
+              </button>
+            )}
             <span className="text-[12px] text-muted">{done}/{total} tasks done</span>
           </div>
         </div>
