@@ -80,12 +80,14 @@ export function MentionTextarea({ value, onChange, members, placeholder, rows = 
           className
         )}
       />
-      {query !== null && filtered.length > 0 && (
+      {query !== null && (
         <div className="absolute z-50 bottom-full mb-1 left-0 min-w-[180px] bg-card border border-border rounded-xl shadow-xl overflow-hidden">
           <p className="px-3 py-1.5 text-[10px] font-semibold text-muted uppercase tracking-wider border-b border-border">
             Mention
           </p>
-          {filtered.map((m) => (
+          {filtered.length === 0 ? (
+            <p className="px-3 py-2 text-[12px] text-muted">No members found</p>
+          ) : filtered.map((m) => (
             <button
               key={m.id}
               type="button"
