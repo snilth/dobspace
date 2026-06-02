@@ -314,6 +314,7 @@ model Notification {
 
 enum NotificationType {
   TASK_ASSIGNED
+  TASK_UPDATED
   TASK_COMMENTED
   SPRINT_STARTED
   TASK_MOVED

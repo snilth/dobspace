@@ -103,7 +103,11 @@ export const tasksRouter = router({
     .mutation(async ({ ctx, input }) => {
       const task = await ctx.prisma.task.findUnique({
         where: { id: input.id },
-        select: { projectId: true, status: true, priority: true, dueDate: true, project: { select: { workspaceId: true } } },
+        select: {
+          title: true, projectId: true, status: true, priority: true, dueDate: true,
+          project: { select: { workspaceId: true } },
+          assignees: { include: { user: { select: { id: true, name: true } } } },
+        },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
       await requireProjectPermission(ctx.prisma, ctx.session.user.id, task.projectId, "EDITOR");
@@ -115,20 +119,57 @@ export const tasksRouter = router({
         include: { assignees: { include: { user: { select: { id: true, name: true, image: true } } } } },
       });
 
-      const changes: Record<string, { before: unknown; after: unknown }> = {};
-      if (rest.status && task.status !== rest.status) changes.status = { before: task.status, after: rest.status };
-      if (rest.priority && task.priority !== rest.priority) changes.priority = { before: task.priority, after: rest.priority };
-      if (dueDate !== undefined) changes.dueDate = { before: task.dueDate, after: dueDate };
+      // ── Activity log ────────────────────────────────────────────────────────
+      const activityChanges: Record<string, { before: unknown; after: unknown }> = {};
+      if (rest.status && task.status !== rest.status) activityChanges.status = { before: task.status, after: rest.status };
+      if (rest.priority && task.priority !== rest.priority) activityChanges.priority = { before: task.priority, after: rest.priority };
+      if (dueDate !== undefined) activityChanges.dueDate = { before: task.dueDate, after: dueDate };
 
-      if (Object.keys(changes).length) {
+      if (Object.keys(activityChanges).length) {
         await ctx.prisma.activityLog.create({
           data: {
             workspaceId: task.project.workspaceId,
             entityType: "TASK", entityId: input.id, action: "UPDATED",
             userId: ctx.session.user.id,
-            changes: changes as unknown as Prisma.InputJsonValue,
+            changes: activityChanges as unknown as Prisma.InputJsonValue,
           },
         });
+      }
+
+      // ── Bundled notification to assignees (not the editor) ──────────────────
+      const STATUS_LABEL: Record<string, string> = { BACKLOG: "Backlog", IN_PROGRESS: "In Progress", REVIEW: "In Review", DONE: "Done" };
+      const PRIORITY_LABEL: Record<string, string> = { LOW: "Low", MEDIUM: "Medium", HIGH: "High" };
+      const changeParts: string[] = [];
+      if (rest.status && task.status !== rest.status) changeParts.push(`status → ${STATUS_LABEL[rest.status] ?? rest.status}`);
+      if (rest.priority && task.priority !== rest.priority) changeParts.push(`priority → ${PRIORITY_LABEL[rest.priority] ?? rest.priority}`);
+      if (dueDate !== undefined) {
+        changeParts.push(dueDate ? `due date → ${new Date(dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "due date removed");
+      }
+      if (rest.title && rest.title !== task.title) changeParts.push(`renamed to "${rest.title}"`);
+
+      if (changeParts.length > 0) {
+        const editor = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
+        const message = `${editor?.name ?? "Someone"} updated "${updated.title}": ${changeParts.join(" · ")}`;
+        const notifyUserIds = task.assignees.filter(a => a.user.id !== ctx.session.user.id).map(a => a.user.id);
+
+        for (const userId of notifyUserIds) {
+          const pref = await ctx.prisma.notificationPreference.findUnique({
+            where: { userId_workspaceId: { userId, workspaceId: task.project.workspaceId } },
+          });
+          const events = (pref?.eventTypes ?? {}) as Record<string, boolean>;
+          const wantsNotif =
+            (rest.status && events.status_changed !== false) ||
+            (rest.priority && events.priority_changed !== false) ||
+            (dueDate !== undefined && events.due_date_changed !== false) ||
+            (rest.title && events.status_changed !== false);
+
+          if (wantsNotif) {
+            const notif = await ctx.prisma.notification.create({
+              data: { userId, taskId: input.id, type: "TASK_UPDATED", message },
+            });
+            emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+          }
+        }
       }
 
       emitToProject(task.projectId, "task:updated", {
