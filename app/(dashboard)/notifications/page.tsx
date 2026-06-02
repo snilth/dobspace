@@ -274,7 +274,7 @@ function NotifRow({ notification: n, onMarkRead, onMarkUnread, onDismiss }: {
           {meta?.changes && Object.entries(meta.changes).map(([key, val]) => (
             <div key={key} className="flex items-center gap-2 text-[12px]">
               <span className="text-muted w-16 flex-shrink-0 capitalize">{key === "dueDate" ? "Due date" : key}</span>
-              <span className="font-medium text-foreground-2">{String(val)}</span>
+              <span className="font-semibold text-brand">{String(val)}</span>
             </div>
           ))}
         </div>

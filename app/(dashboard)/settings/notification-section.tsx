@@ -107,7 +107,6 @@ export function NotificationSection({ workspaceId, initial }: Props) {
       <div className="pb-5 mb-5 border-b border-border">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-semibold text-foreground-2">Task activity</p>
-          {update.isPending && <span className="text-[10px] text-muted animate-pulse">Saving…</span>}
           {update.isError && <span className="text-[10px] text-error">Failed to save</span>}
         </div>
         <div className="space-y-2">
