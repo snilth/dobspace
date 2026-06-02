@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { AssigneeDropdown } from "./assignee-dropdown";
+import { MentionTextarea } from "@/components/shared/mention-textarea";
 import type { BoardTask } from "./kanban-board";
 
 const PRIORITY_OPTS = [
@@ -108,10 +109,14 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
           {/* Note */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-foreground-2">Note <span className="font-normal text-muted">(optional)</span></label>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)}
-              placeholder="Write a note to yourself about this task..."
-              maxLength={2000} rows={3}
-              className="w-full px-3 py-2.5 text-sm bg-surface border border-border rounded-[8px] outline-none focus:border-brand/60 focus:ring-2 focus:ring-brand/8 transition-all placeholder:text-muted-2 resize-none" />
+            <MentionTextarea
+              value={note}
+              onChange={setNote}
+              members={projectMembers.map(m => ({ id: m.user.id, name: m.user.name }))}
+              placeholder="Write a note... type @ to mention someone"
+              maxLength={2000}
+              rows={3}
+            />
           </div>
 
           {/* Priority */}

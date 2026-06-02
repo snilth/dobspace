@@ -5,6 +5,47 @@ import { TaskStatus, Priority, Prisma, PrismaClient } from "@prisma/client";
 import { requireProjectPermission } from "@/lib/trpc/guards";
 import { emitToProject, emitToUser } from "@/lib/socket/server";
 
+function extractMentionedFirstNames(text: string): string[] {
+  const matches = [...(text ?? "").matchAll(/@(\w+)/g)];
+  return [...new Set(matches.map(m => m[1].toLowerCase()))];
+}
+
+async function notifyMentioned(
+  prisma: PrismaClient,
+  texts: string[],
+  taskId: string,
+  taskTitle: string,
+  projectId: string,
+  workspaceId: string,
+  actorId: string,
+  actorName: string,
+  projectName: string | null,
+) {
+  const names = texts.flatMap(extractMentionedFirstNames);
+  if (!names.length) return;
+
+  const members = await prisma.projectMember.findMany({
+    where: { projectId },
+    include: { user: { select: { id: true, name: true } } },
+  });
+
+  for (const { user } of members) {
+    if (user.id === actorId) continue;
+    const firstName = user.name.split(" ")[0].toLowerCase();
+    if (!names.includes(firstName)) continue;
+    const events = await getEventPrefs(prisma, user.id, workspaceId);
+    if (events.mentioned === false) continue;
+    const notif = await prisma.notification.create({
+      data: {
+        userId: user.id, taskId, type: "TASK_COMMENTED",
+        message: `${actorName} mentioned you in a note`,
+        metadata: { actor: actorName, taskTitle, project: projectName },
+      },
+    });
+    emitToUser(user.id, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+  }
+}
+
 async function getEventPrefs(prisma: PrismaClient, userId: string, workspaceId: string): Promise<Record<string, boolean>> {
   const pref = await prisma.notificationPreference.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
@@ -122,6 +163,11 @@ export const tasksRouter = router({
         changedBy: ctx.session.user.id,
       });
 
+      // Detect @mentions in note/description
+      const assigner2 = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
+      const projectName2 = (await ctx.prisma.project.findUnique({ where: { id: input.projectId }, select: { name: true } }))?.name ?? null;
+      await notifyMentioned(ctx.prisma, [taskData.description ?? "", taskData.note ?? ""], task.id, taskData.title, input.projectId, project.workspaceId, ctx.session.user.id, assigner2?.name ?? "Someone", projectName2);
+
       return newTask;
     }),
 
@@ -211,6 +257,13 @@ export const tasksRouter = router({
         assignee: updated.assignees[0]?.user ?? null,
         changedBy: ctx.session.user.id,
       });
+
+      // Detect @mentions in updated note
+      if (rest.note) {
+        const editorInfo = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
+        const projName = (await ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } }))?.name ?? null;
+        await notifyMentioned(ctx.prisma, [rest.note], input.id, updated.title, task.projectId, task.project.workspaceId, ctx.session.user.id, editorInfo?.name ?? "Someone", projName);
+      }
 
       return updated;
     }),
