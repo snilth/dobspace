@@ -11,8 +11,8 @@ const SLEEP_MIN = 22_000;
 const SLEEP_MAX = 38_000;
 const WAKE_MIN = 10_000;
 const WAKE_MAX = 20_000;
-const RANDOM_TALK_MIN = 45_000;
-const RANDOM_TALK_MAX = 90_000;
+const RANDOM_TALK_MIN = 70_000;
+const RANDOM_TALK_MAX = 130_000;
 
 const MESSAGES = [
   "A little reminder: you're loved. 🩷",
@@ -27,15 +27,20 @@ const MESSAGES = [
   "Missing you already 🥺",
   "You're my favourite researcher 💻",
   "Remember to eat something! 🍱",
-  "One step at a time, you're crushing it 🌟",
   "Snack break? 🍪",
   "I love you",
   "Muah muah",
   "Muahhhhhhhhh <3",
 ];
 
-function randomMsg() {
-  return MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+// Shuffle bag — cycles through all messages before any repeats
+const msgBag: string[] = [];
+function nextMsg(): string {
+  if (msgBag.length === 0) {
+    const shuffled = [...MESSAGES].sort(() => Math.random() - 0.5);
+    msgBag.push(...shuffled);
+  }
+  return msgBag.pop()!;
 }
 
 const C: Record<number, string> = {
@@ -208,7 +213,7 @@ export function WalkingCat() {
     if (talkTimerRef.current) clearTimeout(talkTimerRef.current);
     const delay = RANDOM_TALK_MIN + Math.random() * (RANDOM_TALK_MAX - RANDOM_TALK_MIN);
     talkTimerRef.current = setTimeout(() => {
-      if (stateRef.current === "walking") showBubble(randomMsg(), 2500);
+      if (stateRef.current === "walking") showBubble(nextMsg(), 2500);
       scheduleRandomTalk();
     }, delay);
   }, [showBubble]);
@@ -239,7 +244,7 @@ export function WalkingCat() {
 
     stateRef.current = "petting";
     setCatState("petting");
-    showBubble(randomMsg());
+    showBubble(nextMsg());
 
     setTimeout(() => startWalking(), 2200);
   }, [startWalking, showBubble]);
