@@ -60,11 +60,18 @@ const DEFAULT_EVENT_TYPES_MAP: Record<string, boolean> = {
 };
 
 async function getEventPrefs(prisma: PrismaClient, userId: string, workspaceId: string): Promise<Record<string, boolean>> {
-  const pref = await prisma.notificationPreference.findUnique({
+  // Try workspace-specific preference first
+  let pref = await prisma.notificationPreference.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
     select: { eventTypes: true },
   });
-  // Merge with defaults so missing keys default to true (notify), explicit false = disabled
+  // Fall back to any preference the user has (they may have saved prefs under their own workspace)
+  if (!pref) {
+    pref = await prisma.notificationPreference.findFirst({
+      where: { userId },
+      select: { eventTypes: true },
+    });
+  }
   return { ...DEFAULT_EVENT_TYPES_MAP, ...(pref?.eventTypes ?? {}) } as Record<string, boolean>;
 }
 
