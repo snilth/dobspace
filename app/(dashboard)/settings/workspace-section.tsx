@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Crown, Trash2, FolderKanban } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Crown, Trash2, FolderKanban, Download } from "lucide-react";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { Section, Field, SaveButton, ErrorMsg } from "./account-section";
@@ -145,6 +145,48 @@ export function WorkspaceSection({ workspaceId, workspaceName, isOwner, members,
           })}
         </div>
       </div>
+
+      {/* Backup */}
+      <div className="pt-5 mt-5 border-t border-border">
+        <p className="text-xs font-semibold text-foreground-2 mb-1">Data Backup</p>
+        <p className="text-xs text-muted mb-3">Download all workspace data as JSON — projects, tasks, members, notifications.</p>
+        <ExportButton workspaceId={workspaceId} />
+      </div>
     </Section>
+  );
+}
+
+function ExportButton({ workspaceId }: { workspaceId: string }) {
+  const trpc = useTRPC();
+  const [exporting, setExporting] = useState(false);
+  const { refetch } = useQuery({ ...trpc.workspace.exportData.queryOptions({ workspaceId }), enabled: false });
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const { data } = await refetch();
+      if (!data) return;
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dobspace-backup-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleExport}
+      disabled={exporting}
+      className="flex items-center gap-2 px-4 py-2 border border-border rounded-[8px] text-sm font-semibold text-foreground-2 hover:bg-surface-2 hover:border-brand/30 hover:text-brand transition-colors disabled:opacity-50"
+    >
+      {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+      {exporting ? "Exporting…" : "Export workspace data"}
+    </button>
   );
 }

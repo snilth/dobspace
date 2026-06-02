@@ -264,4 +264,75 @@ export const workspaceRouter = router({
       });
       return updated;
     }),
+
+  exportData: protectedProcedure
+    .input(z.object({ workspaceId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await requireWorkspaceMember(ctx.prisma, ctx.session.user.id, input.workspaceId);
+
+      const workspace = await ctx.prisma.workspace.findUnique({
+        where: { id: input.workspaceId },
+        include: {
+          members: {
+            include: {
+              user: { select: { id: true, name: true, email: true, image: true, createdAt: true } },
+              jobRole: true,
+            },
+          },
+          projects: {
+            include: {
+              sprints: true,
+              members: {
+                include: {
+                  user: { select: { id: true, name: true, email: true } },
+                },
+              },
+              tasks: {
+                select: {
+                  id: true,
+                  title: true,
+                  description: true,
+                  note: true,
+                  status: true,
+                  priority: true,
+                  tags: true,
+                  dueDate: true,
+                  order: true,
+                  sprintId: true,
+                  createdAt: true,
+                  updatedAt: true,
+                  assignees: {
+                    include: {
+                      user: { select: { id: true, name: true, email: true } },
+                    },
+                  },
+                },
+                orderBy: { createdAt: "asc" },
+              },
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+      });
+
+      if (!workspace) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const notifications = await ctx.prisma.notification.findMany({
+        where: { userId: ctx.session.user.id },
+        include: {
+          task: {
+            select: { id: true, title: true, description: true, note: true, status: true, priority: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 500,
+      });
+
+      return {
+        exportedAt: new Date().toISOString(),
+        exportedBy: ctx.session.user.email,
+        workspace,
+        notifications,
+      };
+    }),
 });
