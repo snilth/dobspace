@@ -30,6 +30,21 @@ async function canAccessProject(
   if (!pm) throw new TRPCError({ code: "FORBIDDEN" });
 }
 
+async function requireProjectManager(
+  prisma: PrismaClient,
+  userId: string,
+  workspaceId: string,
+  projectId: string,
+): Promise<void> {
+  await requireWorkspaceMember(prisma, userId, workspaceId);
+  if (await isWorkspaceOwner(prisma, userId, workspaceId)) return;
+  const pm = await prisma.projectMember.findUnique({
+    where: { projectId_userId: { projectId, userId } },
+    select: { permission: true },
+  });
+  if (pm?.permission !== "MANAGER") throw new TRPCError({ code: "FORBIDDEN" });
+}
+
 export const projectsRouter = router({
   // All projects across every workspace the user belongs to
   listMine: protectedProcedure.query(async ({ ctx }) => {
@@ -239,7 +254,7 @@ export const projectsRouter = router({
       permission: z.enum(["VIEWER", "EDITOR", "MANAGER"]),
     }))
     .mutation(async ({ ctx, input }) => {
-      await requireWorkspaceOwner(ctx.prisma, ctx.session.user.id, input.workspaceId);
+      await requireProjectManager(ctx.prisma, ctx.session.user.id, input.workspaceId, input.projectId);
       return ctx.prisma.projectMember.update({
         where: { projectId_userId: { projectId: input.projectId, userId: input.userId } },
         data: { permission: input.permission },
@@ -254,7 +269,7 @@ export const projectsRouter = router({
       tag: z.string().max(30).nullable(),
     }))
     .mutation(async ({ ctx, input }) => {
-      await requireWorkspaceOwner(ctx.prisma, ctx.session.user.id, input.workspaceId);
+      await requireProjectManager(ctx.prisma, ctx.session.user.id, input.workspaceId, input.projectId);
       return ctx.prisma.projectMember.update({
         where: { projectId_userId: { projectId: input.projectId, userId: input.userId } },
         data: { tag: input.tag },
@@ -264,7 +279,7 @@ export const projectsRouter = router({
   addMember: protectedProcedure
     .input(z.object({ projectId: z.string(), workspaceId: z.string(), userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await requireWorkspaceOwner(ctx.prisma, ctx.session.user.id, input.workspaceId);
+      await requireProjectManager(ctx.prisma, ctx.session.user.id, input.workspaceId, input.projectId);
       // target user must be in workspace
       await requireWorkspaceMember(ctx.prisma, input.userId, input.workspaceId);
       return ctx.prisma.projectMember.upsert({
@@ -277,7 +292,7 @@ export const projectsRouter = router({
   removeMember: protectedProcedure
     .input(z.object({ projectId: z.string(), workspaceId: z.string(), userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await requireWorkspaceOwner(ctx.prisma, ctx.session.user.id, input.workspaceId);
+      await requireProjectManager(ctx.prisma, ctx.session.user.id, input.workspaceId, input.projectId);
       await ctx.prisma.projectMember.deleteMany({
         where: { projectId: input.projectId, userId: input.userId },
       });
@@ -288,7 +303,7 @@ export const projectsRouter = router({
   generateCode: protectedProcedure
     .input(z.object({ projectId: z.string(), workspaceId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await requireWorkspaceOwner(ctx.prisma, ctx.session.user.id, input.workspaceId);
+      await requireProjectManager(ctx.prisma, ctx.session.user.id, input.workspaceId, input.projectId);
       const code = makeJoinCode();
       return ctx.prisma.project.update({
         where: { id: input.projectId },
