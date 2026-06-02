@@ -228,22 +228,25 @@ export const tasksRouter = router({
             where: { userId_workspaceId: { userId, workspaceId: task.project.workspaceId } },
           });
           const events = (pref?.eventTypes ?? {}) as Record<string, boolean>;
-          const wantsNotif =
-            (metaChanges.status && events.status_changed !== false) ||
-            (metaChanges.priority && events.priority_changed !== false) ||
-            (metaChanges.dueDate && events.due_date_changed !== false) ||
-            (metaChanges.title && events.status_changed !== false);
 
-          if (wantsNotif) {
-            const notif = await ctx.prisma.notification.create({
-              data: {
-                userId, taskId: input.id, type: "TASK_UPDATED",
-                message: `${editor?.name ?? "Someone"} updated a task`,
-                metadata: { actor: editor?.name ?? "Someone", taskTitle: updated.title, project: projectName, changes: metaChanges },
-              },
-            });
-            emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
-          }
+          // Filter changes to only what this user wants to receive
+          const allowedChanges: Record<string, string> = {};
+          if (metaChanges.status   && events.status_changed   !== false) allowedChanges.status   = metaChanges.status;
+          if (metaChanges.priority && events.priority_changed !== false) allowedChanges.priority = metaChanges.priority;
+          if (metaChanges.dueDate  && events.due_date_changed !== false) allowedChanges.dueDate  = metaChanges.dueDate;
+          if (metaChanges.title) allowedChanges.title = metaChanges.title;
+
+          // Only notify if at least one allowed change exists
+          if (Object.keys(allowedChanges).length === 0) continue;
+
+          const notif = await ctx.prisma.notification.create({
+            data: {
+              userId, taskId: input.id, type: "TASK_UPDATED",
+              message: `${editor?.name ?? "Someone"} updated a task`,
+              metadata: { actor: editor?.name ?? "Someone", taskTitle: updated.title, project: projectName, changes: allowedChanges },
+            },
+          });
+          emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
         }
       }
 
