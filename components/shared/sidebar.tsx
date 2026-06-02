@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, FolderKanban, Settings,
-  ChevronRight, LogOut, Hash, UserCircle2, CalendarDays,
+  ChevronRight, LogOut, Hash, UserCircle2, CalendarDays, Layers,
 } from "lucide-react";
 import { NotificationBell } from "./notification-bell";
 import { CatIcon } from "./cat-icon";
@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
   { href: "/projects", icon: FolderKanban, label: "Projects" },
   { href: "/calendar", icon: CalendarDays, label: "Calendar" },
+  { href: "/sprints", icon: Layers, label: "Sprints" },
 ];
 
 type Project = { id: string; name: string; isOwned: boolean };

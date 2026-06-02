@@ -1,9 +1,10 @@
 import { createServerCaller } from "@/lib/trpc/server";
 import { getSession } from "@/lib/auth/session";
 import { KanbanBoard, type BoardTask } from "@/components/kanban/kanban-board";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, Layers } from "lucide-react";
 import { ProjectTeamButton } from "@/components/shared/project-team-button";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -65,6 +66,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         </div>
         <div className="flex items-center gap-0.5">
           <HeaderBtn icon={<LayoutGrid className="w-4 h-4" />} label="Board" active />
+          <Link href={`/projects/${project.id}/sprints`}>
+            <HeaderBtn icon={<Layers className="w-4 h-4" />} label="Sprints" />
+          </Link>
           <ProjectTeamButton
             workspaceId={project.workspaceId}
             workspaceName=""

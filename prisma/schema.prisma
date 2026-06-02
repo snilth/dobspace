@@ -175,6 +175,8 @@ model Sprint {
   startDate DateTime
   endDate   DateTime
   status    SprintStatus @default(PLANNING)
+  summary   String?
+  summaryAt DateTime?
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
