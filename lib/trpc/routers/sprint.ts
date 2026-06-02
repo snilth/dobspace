@@ -3,6 +3,7 @@ import { router, protectedProcedure } from "@/lib/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { requireProjectPermission } from "@/lib/trpc/guards";
 import { anthropic } from "@/lib/ai/client";
+import { emitToProject } from "@/lib/socket/server";
 
 const SprintInput = z.object({
   name: z.string().min(1).max(100),
@@ -110,7 +111,7 @@ export const sprintRouter = router({
     .input(z.object({ projectId: z.string(), sprint: SprintInput }))
     .mutation(async ({ ctx, input }) => {
       await requireProjectPermission(ctx.prisma, ctx.session.user.id, input.projectId, "MANAGER");
-      return ctx.prisma.sprint.create({
+      const sprint = await ctx.prisma.sprint.create({
         data: {
           projectId: input.projectId,
           name: input.sprint.name,
@@ -118,6 +119,8 @@ export const sprintRouter = router({
           endDate: new Date(input.sprint.endDate),
         },
       });
+      emitToProject(input.projectId, "sprint:updated", { sprintId: sprint.id, projectId: input.projectId, action: "created" });
+      return sprint;
     }),
 
   update: protectedProcedure
@@ -126,7 +129,7 @@ export const sprintRouter = router({
       const sprint = await getSprintWithProject(ctx.prisma, input.sprintId);
       await requireProjectPermission(ctx.prisma, ctx.session.user.id, sprint.projectId, "MANAGER");
       const { sprintId, ...data } = input;
-      return ctx.prisma.sprint.update({
+      const updated = await ctx.prisma.sprint.update({
         where: { id: sprintId },
         data: {
           ...(data.name && { name: data.name }),
@@ -134,6 +137,8 @@ export const sprintRouter = router({
           ...(data.endDate && { endDate: new Date(data.endDate) }),
         },
       });
+      emitToProject(sprint.projectId, "sprint:updated", { sprintId: input.sprintId, projectId: sprint.projectId, action: "updated" });
+      return updated;
     }),
 
   delete: protectedProcedure
@@ -141,12 +146,12 @@ export const sprintRouter = router({
     .mutation(async ({ ctx, input }) => {
       const sprint = await getSprintWithProject(ctx.prisma, input.sprintId);
       await requireProjectPermission(ctx.prisma, ctx.session.user.id, sprint.projectId, "MANAGER");
-      // Unassign tasks before deleting
       await ctx.prisma.task.updateMany({
         where: { sprintId: input.sprintId },
         data: { sprintId: null },
       });
       await ctx.prisma.sprint.delete({ where: { id: input.sprintId } });
+      emitToProject(sprint.projectId, "sprint:updated", { sprintId: input.sprintId, projectId: sprint.projectId, action: "deleted" });
     }),
 
   activate: protectedProcedure
@@ -163,10 +168,12 @@ export const sprintRouter = router({
       if (existing) {
         throw new TRPCError({ code: "CONFLICT", message: "There is already an active sprint in this project" });
       }
-      return ctx.prisma.sprint.update({
+      const updated = await ctx.prisma.sprint.update({
         where: { id: input.sprintId },
         data: { status: "ACTIVE" },
       });
+      emitToProject(sprint.projectId, "sprint:updated", { sprintId: input.sprintId, projectId: sprint.projectId, action: "activated" });
+      return updated;
     }),
 
   complete: protectedProcedure
@@ -209,10 +216,12 @@ export const sprintRouter = router({
       }
 
       const summary = await generateSprintSummary(ctx.prisma, input.sprintId);
-      return ctx.prisma.sprint.update({
+      const completed = await ctx.prisma.sprint.update({
         where: { id: input.sprintId },
         data: { status: "COMPLETED", summary, summaryAt: new Date() },
       });
+      emitToProject(sprint.projectId, "sprint:updated", { sprintId: input.sprintId, projectId: sprint.projectId, action: "completed" });
+      return completed;
     }),
 
   generateSummary: protectedProcedure
@@ -250,6 +259,7 @@ export const sprintRouter = router({
         where: { id: { in: input.taskIds }, projectId: sprint.projectId },
         data: { sprintId: input.sprintId },
       });
+      emitToProject(sprint.projectId, "sprint:updated", { sprintId: input.sprintId, projectId: sprint.projectId, action: "tasks_changed" });
     }),
 
   removeTasks: protectedProcedure
@@ -261,6 +271,7 @@ export const sprintRouter = router({
         where: { id: { in: input.taskIds }, sprintId: input.sprintId },
         data: { sprintId: null },
       });
+      emitToProject(sprint.projectId, "sprint:updated", { sprintId: input.sprintId, projectId: sprint.projectId, action: "tasks_changed" });
     }),
 
   burndown: protectedProcedure

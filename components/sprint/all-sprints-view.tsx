@@ -23,7 +23,7 @@ const STATUS_ORDER: SprintStatus[] = ["ACTIVE", "PLANNING", "COMPLETED"];
 const TASK_STATUS_COLOR: Record<string, string> = {
   DONE:        "bg-[oklch(52%_0.2_148)]",
   IN_PROGRESS: "bg-[oklch(52%_0.22_228)]",
-  REVIEW:      "bg-[oklch(72%_0.18_85)]",
+  REVIEW:      "bg-[oklch(61%_0.21_55)]",
   BACKLOG:     "bg-[oklch(78%_0.04_258)]",
 };
 
@@ -183,7 +183,7 @@ export function AllSprintsView({ workspaceId }: { workspaceId: string }) {
     };
   }, [sprints]);
 
-const tabSprints = sprints.filter((s) => s.status === activeTab);
+  const tabSprints = sprints.filter((s) => s.status === activeTab);
 
   function handleCreated() {
     queryClient.invalidateQueries({ queryKey: trpc.sprint.listAll.queryKey({ workspaceId }) });

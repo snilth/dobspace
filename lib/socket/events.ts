@@ -39,12 +39,19 @@ export type NotificationPayload = {
   createdAt: Date;
 };
 
+export type SprintUpdatedPayload = {
+  sprintId: string;
+  projectId: string;
+  action: "created" | "updated" | "deleted" | "activated" | "completed" | "tasks_changed";
+};
+
 export type ServerToClientEvents = {
   "task:moved": (payload: TaskMovedPayload) => void;
   "task:created": (payload: TaskCreatedPayload) => void;
   "task:updated": (payload: TaskUpdatedPayload) => void;
   "task:deleted": (payload: TaskDeletedPayload) => void;
   "notification:new": (payload: NotificationPayload) => void;
+  "sprint:updated": (payload: SprintUpdatedPayload) => void;
 };
 
 export type ClientToServerEvents = {

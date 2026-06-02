@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useTRPC } from "@/lib/trpc/client";
+import { usePusherEvent } from "@/hooks/use-pusher";
 import { cn } from "@/lib/utils";
 import { Plus, Play, CheckCircle2, Clock, Loader2, Sparkles, X, ChevronRight, Calendar } from "lucide-react";
 import { SprintCreateModal } from "./sprint-create-modal";
@@ -39,6 +40,16 @@ export function SprintView({ projectId, workspaceId, canManage }: Props) {
   const { data: sprints = [], isLoading } = useQuery(
     trpc.sprint.list.queryOptions({ projectId })
   );
+
+  usePusherEvent(`private-project-${projectId}`, "sprint:updated", ({ sprintId }) => {
+    queryClient.invalidateQueries({ queryKey: trpc.sprint.list.queryKey({ projectId }) });
+    if (selectedId) {
+      queryClient.invalidateQueries({ queryKey: trpc.sprint.get.queryKey({ sprintId: selectedId }) });
+    }
+    if (sprintId !== selectedId) {
+      queryClient.invalidateQueries({ queryKey: trpc.sprint.get.queryKey({ sprintId }) });
+    }
+  });
 
   const activate = useMutation({
     ...trpc.sprint.activate.mutationOptions(),
