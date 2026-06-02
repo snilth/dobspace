@@ -60,18 +60,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Sync from server once loaded — server wins over localStorage
+  // If server returns null (user has no saved preference), reset to defaults to clear previous account's theme
   useEffect(() => {
     if (!serverTheme) return;
-    if (serverTheme.accent && VALID_ACCENTS.includes(serverTheme.accent)) {
-      setAccentState(serverTheme.accent);
-      localStorage.setItem("accent", serverTheme.accent);
-      applyAccent(serverTheme.accent);
-    }
-    if (serverTheme.mode) {
-      setThemeState(serverTheme.mode as Theme);
-      localStorage.setItem("theme", serverTheme.mode);
-      applyTheme(serverTheme.mode as Theme);
-    }
+    const accent = (serverTheme.accent && VALID_ACCENTS.includes(serverTheme.accent))
+      ? serverTheme.accent as Accent
+      : "indigo";
+    setAccentState(accent);
+    localStorage.setItem("accent", accent);
+    applyAccent(accent);
+
+    const mode = (serverTheme.mode as Theme) ?? "system";
+    setThemeState(mode);
+    localStorage.setItem("theme", mode);
+    applyTheme(mode);
   }, [serverTheme]);
 
   function applyTheme(t: Theme) {
