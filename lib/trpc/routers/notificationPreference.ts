@@ -34,18 +34,18 @@ const DeadlineOverdueSchema = z.object({
 });
 
 export const notificationPreferenceRouter = router({
+  // Get preference for current user (per-user, not per-workspace)
   get: protectedProcedure
     .input(z.object({ workspaceId: z.string() }))
     .query(async ({ ctx, input }) => {
       await requireWorkspaceMember(ctx.prisma, ctx.session.user.id, input.workspaceId);
 
-      const pref = await ctx.prisma.notificationPreference.findUnique({
-        where: { userId_workspaceId: { userId: ctx.session.user.id, workspaceId: input.workspaceId } },
+      const pref = await ctx.prisma.notificationPreference.findFirst({
+        where: { userId: ctx.session.user.id },
       });
 
       if (pref) return pref;
 
-      // upsert defaults on first access
       return ctx.prisma.notificationPreference.create({
         data: {
           userId: ctx.session.user.id,
@@ -57,6 +57,7 @@ export const notificationPreferenceRouter = router({
       });
     }),
 
+  // Update preference — always updates the canonical (first) record for this user
   update: protectedProcedure
     .input(z.object({
       workspaceId: z.string(),
@@ -67,8 +68,8 @@ export const notificationPreferenceRouter = router({
     .mutation(async ({ ctx, input }) => {
       await requireWorkspaceMember(ctx.prisma, ctx.session.user.id, input.workspaceId);
 
-      const existing = await ctx.prisma.notificationPreference.findUnique({
-        where: { userId_workspaceId: { userId: ctx.session.user.id, workspaceId: input.workspaceId } },
+      const existing = await ctx.prisma.notificationPreference.findFirst({
+        where: { userId: ctx.session.user.id },
       });
 
       const current = {
@@ -77,19 +78,24 @@ export const notificationPreferenceRouter = router({
         deadlineOverdue: (existing?.deadlineOverdue ?? DEFAULT_DEADLINE_OVERDUE) as typeof DEFAULT_DEADLINE_OVERDUE,
       };
 
-      return ctx.prisma.notificationPreference.upsert({
-        where: { userId_workspaceId: { userId: ctx.session.user.id, workspaceId: input.workspaceId } },
-        create: {
+      if (existing) {
+        return ctx.prisma.notificationPreference.update({
+          where: { id: existing.id },
+          data: {
+            ...(input.eventTypes ? { eventTypes: { ...current.eventTypes, ...input.eventTypes } } : {}),
+            ...(input.deadlineApproaching ? { deadlineApproaching: { ...current.deadlineApproaching, ...input.deadlineApproaching } } : {}),
+            ...(input.deadlineOverdue ? { deadlineOverdue: { ...current.deadlineOverdue, ...input.deadlineOverdue } } : {}),
+          },
+        });
+      }
+
+      return ctx.prisma.notificationPreference.create({
+        data: {
           userId: ctx.session.user.id,
           workspaceId: input.workspaceId,
           eventTypes: { ...current.eventTypes, ...input.eventTypes },
           deadlineApproaching: { ...current.deadlineApproaching, ...input.deadlineApproaching },
           deadlineOverdue: { ...current.deadlineOverdue, ...input.deadlineOverdue },
-        },
-        update: {
-          ...(input.eventTypes ? { eventTypes: { ...current.eventTypes, ...input.eventTypes } } : {}),
-          ...(input.deadlineApproaching ? { deadlineApproaching: { ...current.deadlineApproaching, ...input.deadlineApproaching } } : {}),
-          ...(input.deadlineOverdue ? { deadlineOverdue: { ...current.deadlineOverdue, ...input.deadlineOverdue } } : {}),
         },
       });
     }),

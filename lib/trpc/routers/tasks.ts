@@ -33,7 +33,7 @@ async function notifyMentioned(
     if (user.id === actorId) continue;
     const firstName = user.name.split(" ")[0].toLowerCase();
     if (!names.includes(firstName)) continue;
-    const events = await getEventPrefs(prisma, user.id, workspaceId);
+    const events = await getEventPrefs(prisma, user.id);
     if (events.mentioned === false) continue;
 
     // Dedup: skip if already mentioned in this task within the last hour
@@ -59,29 +59,25 @@ const DEFAULT_EVENT_TYPES_MAP: Record<string, boolean> = {
   due_date_changed: true, commented: true, mentioned: true,
 };
 
-async function getEventPrefs(prisma: PrismaClient, userId: string, workspaceId: string): Promise<Record<string, boolean>> {
-  // Try workspace-specific preference first
-  let pref = await prisma.notificationPreference.findUnique({
-    where: { userId_workspaceId: { userId, workspaceId } },
+async function getEventPrefs(prisma: PrismaClient, userId: string): Promise<Record<string, boolean>> {
+  const pref = await prisma.notificationPreference.findFirst({
+    where: { userId },
     select: { eventTypes: true },
   });
-  // Fall back to any preference the user has (they may have saved prefs under their own workspace)
-  if (!pref) {
-    pref = await prisma.notificationPreference.findFirst({
-      where: { userId },
-      select: { eventTypes: true },
-    });
-  }
   return { ...DEFAULT_EVENT_TYPES_MAP, ...(pref?.eventTypes ?? {}) } as Record<string, boolean>;
 }
 
-async function batchEventPrefs(prisma: PrismaClient, userIds: string[], workspaceId: string): Promise<Map<string, Record<string, boolean>>> {
+async function batchEventPrefs(prisma: PrismaClient, userIds: string[]): Promise<Map<string, Record<string, boolean>>> {
   const prefs = await prisma.notificationPreference.findMany({
-    where: { userId: { in: userIds }, workspaceId },
+    where: { userId: { in: userIds } },
     select: { userId: true, eventTypes: true },
   });
   const map = new Map<string, Record<string, boolean>>();
-  for (const p of prefs) map.set(p.userId, (p.eventTypes ?? {}) as Record<string, boolean>);
+  for (const p of prefs) map.set(p.userId, { ...DEFAULT_EVENT_TYPES_MAP, ...(p.eventTypes ?? {}) } as Record<string, boolean>);
+  // Users without a record get all defaults (true)
+  for (const userId of userIds) {
+    if (!map.has(userId)) map.set(userId, { ...DEFAULT_EVENT_TYPES_MAP });
+  }
   return map;
 }
 
@@ -156,7 +152,7 @@ export const tasksRouter = router({
         const projectName = project.workspaceId ? (await ctx.prisma.project.findUnique({ where: { id: input.projectId }, select: { name: true } }))?.name : null;
         for (const userId of assigneeIds) {
           if (userId === ctx.session.user.id) continue;
-          const events = await getEventPrefs(ctx.prisma, userId, project.workspaceId);
+          const events = await getEventPrefs(ctx.prisma, userId);
           if (events.assigned === false) continue;
           const notif = await ctx.prisma.notification.create({
             data: {
@@ -260,7 +256,7 @@ export const tasksRouter = router({
         const projectName = (await ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } }))?.name ?? null;
         const notifyUserIds = task.assignees.filter(a => a.user.id !== ctx.session.user.id).map(a => a.user.id);
 
-        const prefMap = await batchEventPrefs(ctx.prisma, notifyUserIds, task.project.workspaceId);
+        const prefMap = await batchEventPrefs(ctx.prisma, notifyUserIds);
 
         for (const userId of notifyUserIds) {
           const events = prefMap.get(userId) ?? {};
@@ -341,7 +337,7 @@ export const tasksRouter = router({
         const mover = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
         for (const { userId } of task.assignees) {
           if (userId === ctx.session.user.id) continue;
-          const events = await getEventPrefs(ctx.prisma, userId, task.project.workspaceId);
+          const events = await getEventPrefs(ctx.prisma, userId);
           if (events.status_changed === false) continue;
           const notif = await ctx.prisma.notification.create({
             data: {
@@ -424,7 +420,7 @@ export const tasksRouter = router({
 
       // Notify assignee (skip self-assign, check preference)
       if (input.userId !== ctx.session.user.id) {
-        const events = await getEventPrefs(ctx.prisma, input.userId, task.project.workspaceId);
+        const events = await getEventPrefs(ctx.prisma, input.userId);
         if (events.assigned !== false) {
         const [assigner, project] = await Promise.all([
           ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } }),
@@ -566,7 +562,7 @@ export const tasksRouter = router({
       const project = await ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } });
       for (const { userId } of task.assignees) {
         if (userId === ctx.session.user.id) continue;
-        const events = await getEventPrefs(ctx.prisma, userId, task.project.workspaceId);
+        const events = await getEventPrefs(ctx.prisma, userId);
         if (events.status_changed === false) continue;
         const notif = await ctx.prisma.notification.create({
           data: {
@@ -603,7 +599,7 @@ export const tasksRouter = router({
       const project = await ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } });
       for (const { userId } of task.assignees) {
         if (userId === ctx.session.user.id) continue;
-        const events = await getEventPrefs(ctx.prisma, userId, task.project.workspaceId);
+        const events = await getEventPrefs(ctx.prisma, userId);
         if (events.status_changed === false) continue;
         const notif = await ctx.prisma.notification.create({
           data: {
