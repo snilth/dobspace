@@ -64,7 +64,7 @@ async function getEventPrefs(prisma: PrismaClient, userId: string): Promise<Reco
     where: { userId },
     select: { eventTypes: true },
   });
-  return { ...DEFAULT_EVENT_TYPES_MAP, ...(pref?.eventTypes ?? {}) } as Record<string, boolean>;
+  return { ...DEFAULT_EVENT_TYPES_MAP, ...((pref?.eventTypes ?? {}) as object) } as Record<string, boolean>;
 }
 
 async function batchEventPrefs(prisma: PrismaClient, userIds: string[]): Promise<Map<string, Record<string, boolean>>> {
@@ -73,7 +73,7 @@ async function batchEventPrefs(prisma: PrismaClient, userIds: string[]): Promise
     select: { userId: true, eventTypes: true },
   });
   const map = new Map<string, Record<string, boolean>>();
-  for (const p of prefs) map.set(p.userId, { ...DEFAULT_EVENT_TYPES_MAP, ...(p.eventTypes ?? {}) } as Record<string, boolean>);
+  for (const p of prefs) map.set(p.userId, { ...DEFAULT_EVENT_TYPES_MAP, ...((p.eventTypes ?? {}) as object) } as Record<string, boolean>);
   // Users without a record get all defaults (true)
   for (const userId of userIds) {
     if (!map.has(userId)) map.set(userId, { ...DEFAULT_EVENT_TYPES_MAP });
