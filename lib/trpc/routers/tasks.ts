@@ -293,8 +293,8 @@ export const tasksRouter = router({
         changedBy: ctx.session.user.id,
       });
 
-      // Detect @mentions in updated note
-      if (rest.note) {
+      // Detect @mentions in updated note (only if note field was included in update)
+      if (rest.note != null) {
         const editorInfo = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
         const projName = (await ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } }))?.name ?? null;
         await notifyMentioned(ctx.prisma, [rest.note], input.id, updated.title, task.projectId, task.project.workspaceId, ctx.session.user.id, editorInfo?.name ?? "Someone", projName);

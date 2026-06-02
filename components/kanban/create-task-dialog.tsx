@@ -129,7 +129,7 @@ export function CreateTaskDialog({
             <MentionTextarea
               value={note}
               onChange={setNote}
-              members={members.map(m => ({ id: m.user.id, name: m.user.name }))}
+              members={members.map(m => ({ id: m.user.id, name: m.user.name, image: m.user.image }))}
               placeholder="Write a note... type @ to mention someone"
               maxLength={2000}
               rows={3}

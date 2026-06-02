@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-type Member = { id: string; name: string };
+type Member = { id: string; name: string; image?: string | null };
 
 type Props = {
   value: string;
@@ -94,8 +94,11 @@ export function MentionTextarea({ value, onChange, members, placeholder, rows = 
               onMouseDown={(e) => { e.preventDefault(); insertMention(m); }}
               className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-surface-2 transition-colors"
             >
-              <div className="w-5 h-5 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0">
-                <span className="text-[8px] font-bold text-brand">{m.name.slice(0, 2).toUpperCase()}</span>
+              <div className="w-6 h-6 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {m.image
+                  ? <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
+                  : <span className="text-[9px] font-bold text-brand">{m.name.slice(0, 2).toUpperCase()}</span>
+                }
               </div>
               <span className="text-[13px] text-foreground">@{m.name.split(" ")[0]}</span>
             </button>

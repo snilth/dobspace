@@ -112,7 +112,7 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
             <MentionTextarea
               value={note}
               onChange={setNote}
-              members={projectMembers.map(m => ({ id: m.user.id, name: m.user.name }))}
+              members={projectMembers.map(m => ({ id: m.user.id, name: m.user.name, image: m.user.image }))}
               placeholder="Write a note... type @ to mention someone"
               maxLength={2000}
               rows={3}
