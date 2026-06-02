@@ -19,13 +19,14 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     notFound();
   }
 
-  const { isOwner, workspace } = await trpc.workspace.getCurrent();
+  const projectWorkspaceOwnerId = project.workspace.ownerId;
+  const isProjectWorkspaceOwner = session?.user.id === projectWorkspaceOwnerId;
 
-  const currentUserProjectPermission = isOwner
+  const currentUserProjectPermission = isProjectWorkspaceOwner
     ? "MANAGER"
     : (project.members.find((m) => m.userId === session?.user.id)?.permission ?? "VIEWER");
 
-  const canManage = isOwner;
+  const canManage = isProjectWorkspaceOwner || currentUserProjectPermission === "MANAGER";
 
   const memberTagMap = new Map(project.members.map((m) => [m.userId, m.tag]));
 
@@ -72,7 +73,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             joinCode={project.joinCode}
             canManage={canManage}
             currentUserId={session?.user.id ?? ""}
-            workspaceOwnerId={workspace.ownerId}
+            workspaceOwnerId={projectWorkspaceOwnerId}
           />
         </div>
       </div>

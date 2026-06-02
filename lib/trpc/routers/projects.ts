@@ -133,6 +133,7 @@ export const projectsRouter = router({
       const project = await ctx.prisma.project.findFirst({
         where: { id: input.id, workspaceId },
         include: {
+          workspace: { select: { ownerId: true } },
           sprints: { orderBy: { createdAt: "desc" } },
           members: { select: { userId: true, tag: true, permission: true } },
           tasks: {
