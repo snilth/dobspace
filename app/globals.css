@@ -264,6 +264,16 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(73% 0.009 258);
 }
+:root[data-accent="kimmy"] button,
+:root[data-accent="kimmy"] a,
+:root[data-accent="kimmy"] [role="button"],
+:root[data-accent="kimmy"] [onClick],
+:root[data-accent="kimmy"] select,
+:root[data-accent="kimmy"] summary,
+:root[data-accent="kimmy"] label[for] {
+  cursor: pointer;
+}
+
 :root[data-accent="kimmy"] ::-webkit-scrollbar-thumb {
   background: oklch(86% 0.055 356);
 }

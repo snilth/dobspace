@@ -11,6 +11,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { usePusherEvent } from "@/hooks/use-pusher";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/shared/theme-provider";
 import { TaskCard } from "./task-card";
 import { CreateTaskDialog } from "./create-task-dialog";
 import type {
@@ -35,14 +36,20 @@ export type BoardTask = {
   assignee?: { id: string; name: string; image?: string | null; tag?: string | null } | null;
 };
 
-const COLUMNS: {
-  id: TaskStatus; label: string; dot: string; bg: string;
-  headerText: string; countBg: string;
-}[] = [
-  { id: "BACKLOG", label: "Backlog", dot: "oklch(60% 0.009 258)", bg: "bg-[oklch(97%_0.003_258)]", headerText: "text-[oklch(48%_0.008_258)]", countBg: "bg-[oklch(92%_0.004_258)] text-[oklch(50%_0.008_258)]" },
-  { id: "IN_PROGRESS", label: "In Progress", dot: "oklch(57% 0.21 228)", bg: "bg-[oklch(97%_0.02_228)]", headerText: "text-[oklch(40%_0.18_228)]", countBg: "bg-[oklch(91%_0.04_228)] text-[oklch(42%_0.18_228)]" },
-  { id: "REVIEW", label: "In Review", dot: "oklch(61% 0.21 55)", bg: "bg-[oklch(97%_0.02_55)]", headerText: "text-[oklch(42%_0.17_55)]", countBg: "bg-[oklch(93%_0.04_55)] text-[oklch(44%_0.17_55)]" },
-  { id: "DONE", label: "Done", dot: "oklch(57% 0.2 148)", bg: "bg-[oklch(97%_0.02_148)]", headerText: "text-[oklch(38%_0.17_148)]", countBg: "bg-[oklch(91%_0.05_148)] text-[oklch(40%_0.17_148)]" },
+type ColumnDef = { id: TaskStatus; label: string; dot: string; bg: string; headerText: string; countBg: string };
+
+const COLUMNS: ColumnDef[] = [
+  { id: "BACKLOG",     label: "Backlog",     dot: "oklch(60% 0.009 258)", bg: "bg-[oklch(97%_0.003_258)]", headerText: "text-[oklch(48%_0.008_258)]", countBg: "bg-[oklch(92%_0.004_258)] text-[oklch(50%_0.008_258)]" },
+  { id: "IN_PROGRESS", label: "In Progress", dot: "oklch(57% 0.21 228)",  bg: "bg-[oklch(97%_0.02_228)]",  headerText: "text-[oklch(40%_0.18_228)]",  countBg: "bg-[oklch(91%_0.04_228)] text-[oklch(42%_0.18_228)]"  },
+  { id: "REVIEW",      label: "In Review",   dot: "oklch(61% 0.21 55)",   bg: "bg-[oklch(97%_0.02_55)]",   headerText: "text-[oklch(42%_0.17_55)]",   countBg: "bg-[oklch(93%_0.04_55)] text-[oklch(44%_0.17_55)]"   },
+  { id: "DONE",        label: "Done",        dot: "oklch(57% 0.2 148)",   bg: "bg-[oklch(97%_0.02_148)]",  headerText: "text-[oklch(38%_0.17_148)]",  countBg: "bg-[oklch(91%_0.05_148)] text-[oklch(40%_0.17_148)]" },
+];
+
+const COLUMNS_KIMMY: ColumnDef[] = [
+  { id: "BACKLOG",     label: "Backlog",     dot: "oklch(68% 0.10 280)",  bg: "bg-[oklch(96%_0.018_280)]", headerText: "text-[oklch(44%_0.10_280)]", countBg: "bg-[oklch(91%_0.030_280)] text-[oklch(44%_0.10_280)]" },
+  { id: "IN_PROGRESS", label: "In Progress", dot: "oklch(64% 0.14 245)",  bg: "bg-[oklch(96%_0.022_245)]", headerText: "text-[oklch(42%_0.13_245)]", countBg: "bg-[oklch(91%_0.038_245)] text-[oklch(42%_0.13_245)]" },
+  { id: "REVIEW",      label: "In Review",   dot: "oklch(62% 0.18 30)",   bg: "bg-[oklch(96%_0.032_30)]",  headerText: "text-[oklch(42%_0.16_28)]",  countBg: "bg-[oklch(91%_0.055_30)] text-[oklch(42%_0.16_28)]"  },
+  { id: "DONE",        label: "Done",        dot: "oklch(64% 0.14 160)",  bg: "bg-[oklch(96%_0.020_160)]", headerText: "text-[oklch(42%_0.12_158)]", countBg: "bg-[oklch(91%_0.034_160)] text-[oklch(42%_0.12_158)]" },
 ];
 
 function KanbanColumn({ column, tasks, projectId, workspaceId, canAssign, permission, currentUserId, onTaskCreated, onTaskUpdated, onTaskDeleted }: {
@@ -121,6 +128,8 @@ export function KanbanBoard({ initialTasks, projectId, workspaceId = "", current
   initialTasks: BoardTask[]; projectId: string; workspaceId?: string; currentUserId: string;
   permission?: "VIEWER" | "EDITOR" | "MANAGER";
 }) {
+  const { accent } = useTheme();
+  const columns = accent === "kimmy" ? COLUMNS_KIMMY : COLUMNS;
   const [tasks, setTasks] = useState<BoardTask[]>(initialTasks);
   const [activeTask, setActiveTask] = useState<BoardTask | null>(null);
   const [showViewerToast, setShowViewerToast] = useState(false);
@@ -196,7 +205,7 @@ export function KanbanBoard({ initialTasks, projectId, workspaceId = "", current
 
     const taskId = active.id as string;
     const overId = over.id as string;
-    const isColumn = COLUMNS.some((c) => c.id === overId);
+    const isColumn = columns.some((c) => c.id === overId);
     const newStatus = isColumn
       ? (overId as TaskStatus)
       : (tasks.find((t) => t.id === overId)?.status ?? null);
@@ -222,7 +231,7 @@ export function KanbanBoard({ initialTasks, projectId, workspaceId = "", current
       {/* Viewer overlay — locks entire board */}
       <div className="relative">
         <div className="flex gap-4 px-6 pb-8 overflow-x-auto min-h-0 min-w-0">
-          {COLUMNS.map((column) => (
+          {columns.map((column) => (
             <KanbanColumn
               key={column.id}
               column={column}
