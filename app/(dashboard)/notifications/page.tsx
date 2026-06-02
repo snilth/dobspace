@@ -6,7 +6,7 @@ import { useTRPC } from "@/lib/trpc/client";
 import { usePusherUserEvent } from "@/hooks/use-pusher";
 import { useSession } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
-import { Bell, Check, CheckCheck, ExternalLink, Loader2, Trash2, X, Info } from "lucide-react";
+import { Bell, Check, CheckCheck, ExternalLink, Loader2, Trash2, X, Info, MailOpen, UserPlus, Pencil, Clock, AlertTriangle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 function timeAgo(date: Date | string): string {
@@ -23,10 +23,19 @@ function timeAgo(date: Date | string): string {
 
 type Notif = {
   id: string;
+  type: string;
   message: string;
   read: boolean;
   createdAt: Date | string;
   task?: { projectId: string; project?: { name: string } | null } | null;
+};
+
+const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
+  TASK_ASSIGNED:        { icon: UserPlus,      color: "text-[oklch(52%_0.19_228)]", bg: "bg-[oklch(95%_0.03_228)]", label: "Assigned" },
+  TASK_UPDATED:         { icon: Pencil,         color: "text-[oklch(52%_0.19_278)]", bg: "bg-[oklch(95%_0.03_278)]", label: "Updated"  },
+  TASK_MOVED:           { icon: ArrowRight,     color: "text-[oklch(52%_0.19_148)]", bg: "bg-[oklch(95%_0.03_148)]", label: "Moved"    },
+  DEADLINE_APPROACHING: { icon: Clock,          color: "text-[oklch(55%_0.19_55)]",  bg: "bg-[oklch(96%_0.04_55)]",  label: "Deadline" },
+  DEADLINE_OVERDUE:     { icon: AlertTriangle,  color: "text-[oklch(52%_0.22_27)]",  bg: "bg-[oklch(96%_0.04_27)]",  label: "Overdue"  },
 };
 
 const TABS = [
@@ -53,6 +62,7 @@ export default function NotificationsPage() {
   const { data: unreadCount = 0 } = useQuery(trpc.notifications.unreadCount.queryOptions());
 
   const markRead = useMutation(trpc.notifications.markRead.mutationOptions({ onSuccess: invalidate }));
+  const markUnread = useMutation(trpc.notifications.markUnread.mutationOptions({ onSuccess: invalidate }));
   const markAllRead = useMutation(trpc.notifications.markAllRead.mutationOptions({ onSuccess: invalidate }));
   const dismiss = useMutation(trpc.notifications.dismiss.mutationOptions({ onSuccess: invalidate }));
   const clearRead = useMutation(trpc.notifications.clearRead.mutationOptions({ onSuccess: invalidate }));
@@ -185,6 +195,7 @@ export default function NotificationsPage() {
                 <div className="bg-card rounded-[12px] border border-border overflow-hidden divide-y divide-border opacity-70">
                   {read.map((n) => (
                     <NotifRow key={n.id} notification={n}
+                      onMarkUnread={() => markUnread.mutate({ id: n.id })}
                       onDismiss={() => setConfirmDismiss(n.id)} />
                   ))}
                 </div>
@@ -197,31 +208,62 @@ export default function NotificationsPage() {
   );
 }
 
-function NotifRow({ notification: n, onMarkRead, onDismiss }: {
-  notification: Notif; onMarkRead?: () => void; onDismiss?: () => void;
+function NotifRow({ notification: n, onMarkRead, onMarkUnread, onDismiss }: {
+  notification: Notif; onMarkRead?: () => void; onMarkUnread?: () => void; onDismiss?: () => void;
 }) {
+  const cfg = TYPE_CONFIG[n.type] ?? { icon: Bell, color: "text-muted", bg: "bg-surface-2", label: n.type };
+  const Icon = cfg.icon;
+
   return (
-    <div className={cn("flex items-start gap-3 px-4 py-3.5 hover:bg-surface-2 transition-colors group", !n.read && "bg-brand-subtle/40")}>
-      <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", n.read ? "bg-border-strong" : "bg-brand")} />
+    <div className={cn(
+      "flex items-start gap-3 px-4 py-3.5 hover:bg-surface-2 transition-colors relative",
+      !n.read && "bg-brand-subtle/30"
+    )}>
+      {/* Unread left border */}
+      {!n.read && <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-brand" />}
+
+      {/* Type icon */}
+      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5", cfg.bg)}>
+        <Icon className={cn("w-4 h-4", cfg.color)} />
+      </div>
+
+      {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] text-foreground leading-relaxed">{n.message}</p>
-        <div className="flex items-center gap-3 mt-1 flex-wrap">
-          <span className="text-[11px] text-muted">{timeAgo(n.createdAt)}</span>
-          {n.task?.project && <span className="text-[11px] text-muted font-medium">{n.task.project.name}</span>}
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <span className={cn("text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md", cfg.bg, cfg.color)}>
+            {cfg.label}
+          </span>
+          <span className="text-[11px] text-muted flex-shrink-0">{timeAgo(n.createdAt)}</span>
+        </div>
+        <p className={cn("text-[13px] leading-snug mb-1.5", n.read ? "text-muted" : "text-foreground font-medium")}>{n.message}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {n.task?.project && (
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-surface-3 text-muted-2">
+              {n.task.project.name}
+            </span>
+          )}
           {n.task && (
             <Link href={`/projects/${n.task.projectId}`}
-              className="text-[11px] text-brand font-medium hover:underline flex items-center gap-0.5">
+              className="text-[11px] text-brand font-semibold hover:underline flex items-center gap-0.5">
               <ExternalLink className="w-2.5 h-2.5" />
               View task
             </Link>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5">
+
+      {/* Actions */}
+      <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
         {onMarkRead && (
           <button onClick={onMarkRead} title="Mark as read"
             className="w-7 h-7 rounded-lg flex items-center justify-center text-muted hover:text-brand hover:bg-brand-subtle transition-colors">
             <Check className="w-3.5 h-3.5" />
+          </button>
+        )}
+        {onMarkUnread && (
+          <button onClick={onMarkUnread} title="Mark as unread"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted hover:text-brand hover:bg-brand-subtle transition-colors">
+            <MailOpen className="w-3.5 h-3.5" />
           </button>
         )}
         {onDismiss && (

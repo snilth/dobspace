@@ -70,6 +70,24 @@ export const tasksRouter = router({
         });
       }
 
+      // Notify assignees on task creation (skip self-assign)
+      if (assigneeIds?.length) {
+        const assigner = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
+        const projectName = project.workspaceId ? (await ctx.prisma.project.findUnique({ where: { id: input.projectId }, select: { name: true } }))?.name : null;
+        for (const userId of assigneeIds) {
+          if (userId === ctx.session.user.id) continue;
+          const notif = await ctx.prisma.notification.create({
+            data: {
+              userId,
+              taskId: task.id,
+              type: "TASK_ASSIGNED",
+              message: `${assigner?.name ?? "Someone"} assigned "${task.title}" to you${projectName ? ` in ${projectName}` : ""}`,
+            },
+          });
+          emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+        }
+      }
+
       await ctx.prisma.activityLog.create({
         data: {
           workspaceId: project.workspaceId,

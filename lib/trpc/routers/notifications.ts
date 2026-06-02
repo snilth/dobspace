@@ -47,6 +47,15 @@ export const notificationsRouter = router({
     });
   }),
 
+  markUnread: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.prisma.notification.update({
+        where: { id: input.id, userId: ctx.session.user.id },
+        data: { read: false },
+      });
+    }),
+
   // Soft-delete: hide from UI, kept in DB for 30 days then hard-deleted
   dismiss: protectedProcedure
     .input(z.object({ id: z.string() }))
