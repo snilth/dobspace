@@ -46,6 +46,7 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: 
   TASK_MOVED:           { icon: ArrowRight,     color: "text-[oklch(52%_0.19_148)]", bg: "bg-[oklch(95%_0.03_148)]", label: "Moved"    },
   DEADLINE_APPROACHING: { icon: Clock,          color: "text-[oklch(55%_0.19_55)]",  bg: "bg-[oklch(96%_0.04_55)]",  label: "Deadline" },
   DEADLINE_OVERDUE:     { icon: AlertTriangle,  color: "text-[oklch(52%_0.22_27)]",  bg: "bg-[oklch(96%_0.04_27)]",  label: "Overdue"  },
+  TASK_COMMENTED:       { icon: Bell,           color: "text-[oklch(52%_0.19_320)]", bg: "bg-[oklch(95%_0.03_320)]", label: "Mention"  },
 };
 
 const TABS = [

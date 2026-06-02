@@ -210,11 +210,17 @@ export const tasksRouter = router({
         include: { assignees: { include: { user: { select: { id: true, name: true, image: true } } } } },
       });
 
+      // ── Compute actual dueDate change ──────────────────────────────────────
+      const dueDateActuallyChanged = dueDate !== undefined && (
+        (dueDate === null && task.dueDate !== null) ||
+        (dueDate !== null && (!task.dueDate || new Date(dueDate).getTime() !== task.dueDate.getTime()))
+      );
+
       // ── Activity log ────────────────────────────────────────────────────────
       const activityChanges: Record<string, { before: unknown; after: unknown }> = {};
       if (rest.status && task.status !== rest.status) activityChanges.status = { before: task.status, after: rest.status };
       if (rest.priority && task.priority !== rest.priority) activityChanges.priority = { before: task.priority, after: rest.priority };
-      if (dueDate !== undefined) activityChanges.dueDate = { before: task.dueDate, after: dueDate };
+      if (dueDateActuallyChanged) activityChanges.dueDate = { before: task.dueDate, after: dueDate };
 
       if (Object.keys(activityChanges).length) {
         await ctx.prisma.activityLog.create({
@@ -233,7 +239,7 @@ export const tasksRouter = router({
       const metaChanges: Record<string, string> = {};
       if (rest.status && task.status !== rest.status) metaChanges.status = STATUS_LABEL[rest.status] ?? rest.status;
       if (rest.priority && task.priority !== rest.priority) metaChanges.priority = PRIORITY_LABEL[rest.priority] ?? rest.priority;
-      if (dueDate !== undefined) metaChanges.dueDate = dueDate ? new Date(dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Removed";
+      if (dueDateActuallyChanged) metaChanges.dueDate = dueDate ? new Date(dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Removed";
       if (rest.title && rest.title !== task.title) metaChanges.title = rest.title;
 
       if (Object.keys(metaChanges).length > 0) {
