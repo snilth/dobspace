@@ -67,7 +67,8 @@ export default function NotificationsPage() {
     queryClient.invalidateQueries({ queryKey: trpc.notifications.unreadCount.queryKey() });
   };
 
-  const { data: notifications = [], isLoading } = useQuery(trpc.notifications.list.queryOptions());
+  const { data: rawNotifications = [], isLoading } = useQuery(trpc.notifications.list.queryOptions());
+  const notifications = rawNotifications as unknown as Notif[];
   const { data: unreadCount = 0 } = useQuery(trpc.notifications.unreadCount.queryOptions());
 
   const markRead = useMutation(trpc.notifications.markRead.mutationOptions({ onSuccess: invalidate }));
@@ -222,6 +223,7 @@ function NotifRow({ notification: n, onMarkRead, onMarkUnread, onDismiss }: {
 }) {
   const cfg = TYPE_CONFIG[n.type] ?? { icon: Bell, color: "text-muted", bg: "bg-surface-2", label: n.type };
   const Icon = cfg.icon;
+  const meta = n.metadata as NotifMeta | null | undefined;
 
   return (
     <div className={cn(
@@ -243,43 +245,39 @@ function NotifRow({ notification: n, onMarkRead, onMarkUnread, onDismiss }: {
             <span className={cn("text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md", cfg.bg, cfg.color)}>
               {cfg.label}
             </span>
-            {n.metadata?.actor && (
-              <span className="text-[11px] text-muted">by <span className="font-semibold text-foreground-2">{n.metadata.actor}</span></span>
+            {meta?.actor && (
+              <span className="text-[11px] text-muted">by <span className="font-semibold text-foreground-2">{meta.actor}</span></span>
             )}
           </div>
           <span className="text-[11px] text-muted flex-shrink-0">{timeAgo(n.createdAt)}</span>
         </div>
 
         {/* Task title */}
-        {(n.metadata?.taskTitle ?? n.message) && (
-          <p className={cn("text-[14px] font-semibold leading-snug mb-2", n.read ? "text-foreground-2" : "text-foreground")}>
-            {n.metadata?.taskTitle ?? n.message}
-          </p>
-        )}
+        <p className={cn("text-[14px] font-semibold leading-snug mb-2", n.read ? "text-foreground-2" : "text-foreground")}>
+          {meta?.taskTitle ?? n.message}
+        </p>
 
         {/* Structured metadata */}
-        {n.metadata && (
-          <div className="space-y-1 mb-2">
-            {n.metadata.project && (
-              <div className="flex items-center gap-2 text-[12px]">
-                <span className="text-muted w-16 flex-shrink-0">Project</span>
-                <span className="font-medium text-foreground-2">{n.metadata.project}</span>
-              </div>
-            )}
-            {n.metadata.dueDate && (
-              <div className="flex items-center gap-2 text-[12px]">
-                <span className="text-muted w-16 flex-shrink-0">Due date</span>
-                <span className="font-medium text-foreground-2">{n.metadata.dueDate}</span>
-              </div>
-            )}
-            {n.metadata.changes && Object.entries(n.metadata.changes).map(([key, val]) => (
-              <div key={key} className="flex items-center gap-2 text-[12px]">
-                <span className="text-muted w-16 flex-shrink-0 capitalize">{key === "dueDate" ? "Due date" : key}</span>
-                <span className="font-medium text-foreground-2">{val}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="space-y-1 mb-2">
+          {(meta?.project ?? n.task?.project?.name) && (
+            <div className="flex items-center gap-2 text-[12px]">
+              <span className="text-muted w-16 flex-shrink-0">Project</span>
+              <span className="font-medium text-foreground-2">{meta?.project ?? n.task?.project?.name}</span>
+            </div>
+          )}
+          {meta?.dueDate && (
+            <div className="flex items-center gap-2 text-[12px]">
+              <span className="text-muted w-16 flex-shrink-0">Due date</span>
+              <span className="font-medium text-foreground-2">{meta.dueDate}</span>
+            </div>
+          )}
+          {meta?.changes && Object.entries(meta.changes).map(([key, val]) => (
+            <div key={key} className="flex items-center gap-2 text-[12px]">
+              <span className="text-muted w-16 flex-shrink-0 capitalize">{key === "dueDate" ? "Due date" : key}</span>
+              <span className="font-medium text-foreground-2">{String(val)}</span>
+            </div>
+          ))}
+        </div>
 
         {/* View task link */}
         {n.task && (
