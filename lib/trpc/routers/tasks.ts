@@ -148,20 +148,25 @@ export const tasksRouter = router({
 
       // Notify assignees on task creation (skip self-assign, check preference)
       if (assigneeIds?.length) {
-        const assigner = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
-        const projectName = project.workspaceId ? (await ctx.prisma.project.findUnique({ where: { id: input.projectId }, select: { name: true } }))?.name : null;
-        for (const userId of assigneeIds) {
-          if (userId === ctx.session.user.id) continue;
-          const events = await getEventPrefs(ctx.prisma, userId);
-          if (events.assigned === false) continue;
-          const notif = await ctx.prisma.notification.create({
-            data: {
-              userId, taskId: task.id, type: "TASK_ASSIGNED",
-              message: `${assigner?.name ?? "Someone"} assigned a task to you`,
-              metadata: { actor: assigner?.name ?? "Someone", taskTitle: task.title, project: projectName },
-            },
-          });
-          emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+        const notifyIds = assigneeIds.filter((id) => id !== ctx.session.user.id);
+        if (notifyIds.length) {
+          const [assigner, projectRow, prefMap] = await Promise.all([
+            ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } }),
+            ctx.prisma.project.findUnique({ where: { id: input.projectId }, select: { name: true } }),
+            batchEventPrefs(ctx.prisma, notifyIds),
+          ]);
+          for (const userId of notifyIds) {
+            const events = prefMap.get(userId) ?? {};
+            if (events.assigned === false) continue;
+            const notif = await ctx.prisma.notification.create({
+              data: {
+                userId, taskId: task.id, type: "TASK_ASSIGNED",
+                message: `${assigner?.name ?? "Someone"} assigned a task to you`,
+                metadata: { actor: assigner?.name ?? "Someone", taskTitle: task.title, project: projectRow?.name ?? null },
+              },
+            });
+            emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+          }
         }
       }
 
@@ -334,24 +339,29 @@ export const tasksRouter = router({
 
         // Notify assignees of status change
         const STATUS_LABEL: Record<string, string> = { BACKLOG: "Backlog", IN_PROGRESS: "In Progress", REVIEW: "In Review", DONE: "Done" };
-        const mover = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
-        for (const { userId } of task.assignees) {
-          if (userId === ctx.session.user.id) continue;
-          const events = await getEventPrefs(ctx.prisma, userId);
-          if (events.status_changed === false) continue;
-          const notif = await ctx.prisma.notification.create({
-            data: {
-              userId, taskId: input.id, type: "TASK_MOVED",
-              message: `${mover?.name ?? "Someone"} moved a task`,
-              metadata: {
-                actor: mover?.name ?? "Someone",
-                taskTitle: task.title,
-                project: task.project.name,
-                changes: { status: STATUS_LABEL[input.status] ?? input.status },
+        const notifyIds = task.assignees.map((a) => a.userId).filter((id) => id !== ctx.session.user.id);
+        if (notifyIds.length) {
+          const [mover, prefMap] = await Promise.all([
+            ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } }),
+            batchEventPrefs(ctx.prisma, notifyIds),
+          ]);
+          for (const userId of notifyIds) {
+            const events = prefMap.get(userId) ?? {};
+            if (events.status_changed === false) continue;
+            const notif = await ctx.prisma.notification.create({
+              data: {
+                userId, taskId: input.id, type: "TASK_MOVED",
+                message: `${mover?.name ?? "Someone"} moved a task`,
+                metadata: {
+                  actor: mover?.name ?? "Someone",
+                  taskTitle: task.title,
+                  project: task.project.name,
+                  changes: { status: STATUS_LABEL[input.status] ?? input.status },
+                },
               },
-            },
-          });
-          emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+            });
+            emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+          }
         }
       }
 
@@ -558,20 +568,25 @@ export const tasksRouter = router({
       emitToProject(task.projectId, "task:moved", { taskId: input.id, status: "DONE", changedBy: ctx.session.user.id });
 
       // Notify assignees
-      const approver = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
-      const project = await ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } });
-      for (const { userId } of task.assignees) {
-        if (userId === ctx.session.user.id) continue;
-        const events = await getEventPrefs(ctx.prisma, userId);
-        if (events.status_changed === false) continue;
-        const notif = await ctx.prisma.notification.create({
-          data: {
-            userId, taskId: input.id, type: "TASK_APPROVED",
-            message: `${approver?.name} approved a task`,
-            metadata: { actor: approver?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null, changes: { status: "Done ✓" } },
-          },
-        });
-        emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+      const notifyIdsApprove = task.assignees.map((a) => a.userId).filter((id) => id !== ctx.session.user.id);
+      if (notifyIdsApprove.length) {
+        const [approver, project, prefMap] = await Promise.all([
+          ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } }),
+          ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } }),
+          batchEventPrefs(ctx.prisma, notifyIdsApprove),
+        ]);
+        for (const userId of notifyIdsApprove) {
+          const events = prefMap.get(userId) ?? {};
+          if (events.status_changed === false) continue;
+          const notif = await ctx.prisma.notification.create({
+            data: {
+              userId, taskId: input.id, type: "TASK_APPROVED",
+              message: `${approver?.name ?? "Someone"} approved a task`,
+              metadata: { actor: approver?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null, changes: { status: "Done ✓" } },
+            },
+          });
+          emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+        }
       }
       return updated;
     }),
@@ -595,20 +610,25 @@ export const tasksRouter = router({
       emitToProject(task.projectId, "task:moved", { taskId: input.id, status: "BACKLOG", changedBy: ctx.session.user.id });
 
       // Notify assignees with rejection reason
-      const reviewer = await ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } });
-      const project = await ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } });
-      for (const { userId } of task.assignees) {
-        if (userId === ctx.session.user.id) continue;
-        const events = await getEventPrefs(ctx.prisma, userId);
-        if (events.status_changed === false) continue;
-        const notif = await ctx.prisma.notification.create({
-          data: {
-            userId, taskId: input.id, type: "TASK_REJECTED",
-            message: `${reviewer?.name} rejected a task`,
-            metadata: { actor: reviewer?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null, changes: { status: "Back to Backlog" }, reason: input.reason },
-          },
-        });
-        emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+      const notifyIdsReject = task.assignees.map((a) => a.userId).filter((id) => id !== ctx.session.user.id);
+      if (notifyIdsReject.length) {
+        const [reviewer, project, prefMap] = await Promise.all([
+          ctx.prisma.user.findUnique({ where: { id: ctx.session.user.id }, select: { name: true } }),
+          ctx.prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } }),
+          batchEventPrefs(ctx.prisma, notifyIdsReject),
+        ]);
+        for (const userId of notifyIdsReject) {
+          const events = prefMap.get(userId) ?? {};
+          if (events.status_changed === false) continue;
+          const notif = await ctx.prisma.notification.create({
+            data: {
+              userId, taskId: input.id, type: "TASK_REJECTED",
+              message: `${reviewer?.name ?? "Someone"} rejected a task`,
+              metadata: { actor: reviewer?.name ?? "Someone", taskTitle: task.title, project: project?.name ?? null, changes: { status: "Back to Backlog" }, reason: input.reason },
+            },
+          });
+          emitToUser(userId, "notification:new", { id: notif.id, type: notif.type, message: notif.message, taskId: notif.taskId, createdAt: notif.createdAt });
+        }
       }
       return updated;
     }),

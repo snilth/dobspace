@@ -33,9 +33,12 @@ export const dashboardRouter = router({
             where: { projectId: { in: projectIds } },
             _count: { _all: true },
           }),
-          ctx.prisma.taskAssignee.findMany({
+          ctx.prisma.taskAssignee.groupBy({
+            by: ["userId"],
             where: { task: { projectId: { in: projectIds }, status: { not: "DONE" } } },
-            select: { userId: true, user: { select: { name: true, image: true } } },
+            _count: { _all: true },
+            orderBy: { _count: { userId: "desc" } },
+            take: 10,
           }),
           ctx.prisma.task.findMany({
             where: { projectId: { in: projectIds } },
@@ -72,13 +75,19 @@ export const dashboardRouter = router({
         projectTaskMap[row.projectId][row.status] = row._count._all;
       }
 
-      const workloadCounts = new Map<string, { name: string; image: string | null; count: number }>();
-      for (const row of workloadRaw) {
-        const entry = workloadCounts.get(row.userId);
-        if (entry) entry.count++;
-        else workloadCounts.set(row.userId, { name: row.user.name, image: row.user.image ?? null, count: 1 });
-      }
-      const workload = [...workloadCounts.values()].sort((a, b) => b.count - a.count);
+      const topUserIds = workloadRaw.map((g) => g.userId);
+      const workloadUsers = topUserIds.length
+        ? await ctx.prisma.user.findMany({
+            where: { id: { in: topUserIds } },
+            select: { id: true, name: true, image: true },
+          })
+        : [];
+      const userMap = new Map(workloadUsers.map((u) => [u.id, u]));
+      const workload = workloadRaw.map((g) => ({
+        name: userMap.get(g.userId)?.name ?? "Unknown",
+        image: userMap.get(g.userId)?.image ?? null,
+        count: g._count._all,
+      }));
 
       return {
         kpi: {

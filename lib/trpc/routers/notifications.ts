@@ -21,7 +21,7 @@ export const notificationsRouter = router({
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 500,
+      take: 100,
     });
   }),
 
