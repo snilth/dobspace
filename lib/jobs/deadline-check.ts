@@ -24,7 +24,6 @@ export async function runDeadlineCheck() {
 
     const tasks = await prisma.task.findMany({
       where: {
-        project: { workspaceId: pref.workspaceId },
         status: { not: "DONE" },
         dueDate: { gte: windowStart, lt: windowEnd },
         assignees: { some: { userId: pref.userId } },
@@ -71,7 +70,6 @@ export async function runDeadlineCheck() {
 
     const tasks = await prisma.task.findMany({
       where: {
-        project: { workspaceId: pref.workspaceId },
         status: { not: "DONE" },
         dueDate: { lt: now },
         assignees: { some: { userId: pref.userId } },
