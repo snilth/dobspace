@@ -38,7 +38,7 @@ export function NotificationBell() {
       )}
     >
       <div className="relative flex-shrink-0">
-        <Bell className={cn("w-4 h-4", active && "text-brand-light")} />
+        <Bell className={cn("w-4 h-4", active && "text-sidebar-active-text")} />
         {count > 0 && (
           <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-brand text-brand-foreground text-[8px] font-bold rounded-full flex items-center justify-center">
             {count > 9 ? "9+" : count}

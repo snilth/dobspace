@@ -28,6 +28,7 @@ export type BoardTask = {
   projectId: string;
   title: string;
   description?: string | null;
+  note?: string | null;
   status: TaskStatus;
   priority: "LOW" | "MEDIUM" | "HIGH";
   tags: string[];

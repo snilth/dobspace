@@ -36,6 +36,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       projectId: project.id,
       title: t.title,
       description: t.description,
+      note: t.note,
       status: t.status as BoardTask["status"],
       priority: t.priority as BoardTask["priority"],
       tags: t.tags,

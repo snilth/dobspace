@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarDays, GripVertical, UserCircle2, Trash2, Pencil, X, SendHorizonal, CheckCircle2, XCircle } from "lucide-react";
+import { CalendarDays, GripVertical, UserCircle2, Trash2, Pencil, X, SendHorizonal, CheckCircle2, XCircle, StickyNote } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
@@ -40,6 +40,9 @@ export function TaskCard({ task, workspaceId = "", canAssign = false, permission
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [notePos, setNotePos] = useState<{ top: number; left: number; side: "right" | "left" } | null>(null);
+  const noteButtonRef = useRef<HTMLButtonElement>(null);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id });
 
@@ -68,13 +71,22 @@ export function TaskCard({ task, workspaceId = "", canAssign = false, permission
 
   return (
     <>
+      {/* Dim backdrop — rendered behind popover but above other cards */}
+      {noteOpen && (
+        <div
+          className="fixed inset-0 z-[39] bg-black/20 backdrop-blur-[1px]"
+          onClick={() => setNoteOpen(false)}
+        />
+      )}
+
       <div
         ref={setNodeRef}
         style={style}
         className={cn(
           "group relative bg-card border border-border rounded-[12px] overflow-hidden cursor-pointer",
           "hover:shadow-[0_4px_16px_-4px_oklch(0%_0_0/12%)] hover:border-[oklch(85%_0.01_258)] transition-all duration-200",
-          isDragging && "shadow-2xl rotate-1.5"
+          isDragging && "shadow-2xl rotate-1.5",
+          noteOpen && "z-[41]"
         )}
         onClick={() => setEditing(true)}
       >
@@ -145,6 +157,27 @@ export function TaskCard({ task, workspaceId = "", canAssign = false, permission
               ))}
               {task.tags.length > 2 && <span className="text-[10px] text-muted-2 font-medium">+{task.tags.length - 2}</span>}
             </div>
+          )}
+
+          {task.note && (
+            <button
+              ref={noteButtonRef}
+              data-note-popover
+              onClick={(e) => {
+                e.stopPropagation();
+                const rect = noteButtonRef.current?.getBoundingClientRect();
+                if (rect) {
+                  const spaceRight = window.innerWidth - rect.right;
+                  const side = spaceRight >= 280 ? "right" : "left";
+                  setNotePos({ top: rect.top, left: side === "right" ? rect.right + 10 : rect.left - 10, side });
+                }
+                setNoteOpen(v => !v);
+              }}
+              className="w-full flex items-center gap-1.5 px-2 py-1.5 mb-2 rounded-lg border border-[oklch(88%_0.09_75)] bg-[oklch(97%_0.03_80)] hover:bg-[oklch(94%_0.05_80)] transition-colors text-left"
+            >
+              <StickyNote className="w-3 h-3 text-[oklch(55%_0.14_75)] flex-shrink-0" />
+              <span className="text-[10px] font-semibold text-[oklch(48%_0.14_75)]">This task has a note · click to view</span>
+            </button>
           )}
 
           <div className="flex items-center justify-between gap-2">
@@ -229,6 +262,74 @@ export function TaskCard({ task, workspaceId = "", canAssign = false, permission
           onUpdated={(updated) => { onTaskUpdated?.(updated); setEditing(false); }}
         />
       )}
+
+      {noteOpen && task.note && notePos && (
+        <NotePopover title={task.title} note={task.note} pos={notePos} onClose={() => setNoteOpen(false)} />
+      )}
     </>
+  );
+}
+
+function NotePopover({ title, note, pos, onClose }: {
+  title: string; note: string;
+  pos: { top: number; left: number; side: "right" | "left" };
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-note-popover]")) onClose();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  const style: React.CSSProperties = pos.side === "right"
+    ? { top: pos.top, left: pos.left }
+    : { top: pos.top, right: window.innerWidth - pos.left };
+
+  return (
+    <div
+      data-note-popover
+      className="fixed z-50 w-80 bg-card border border-border rounded-2xl shadow-[0_8px_40px_-8px_oklch(0%_0_0/25%),0_2px_8px_-2px_oklch(0%_0_0/12%)] animate-in fade-in slide-in-from-bottom-3 duration-200"
+      style={style}
+    >
+      {/* Arrow */}
+      <div
+        className="absolute w-3 h-3 rotate-45"
+        style={pos.side === "right"
+          ? { left: -7, top: 22, background: "var(--color-brand-subtle)", border: "1px solid var(--color-brand-muted)", borderTop: "none", borderRight: "none" }
+          : { right: -7, top: 22, background: "var(--color-brand-subtle)", border: "1px solid var(--color-brand-muted)", borderBottom: "none", borderLeft: "none" }}
+      />
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 rounded-t-2xl bg-brand-subtle border-b border-brand-muted">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-brand-muted flex items-center justify-center">
+            <StickyNote className="w-4 h-4 text-brand" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-brand uppercase tracking-wide leading-none">Note</p>
+            <p className="text-[13px] font-semibold text-foreground leading-snug mt-0.5 truncate max-w-[190px]">{title}</p>
+          </div>
+        </div>
+        <button onClick={onClose} className="w-7 h-7 rounded-lg hover:bg-brand-muted flex items-center justify-center text-muted hover:text-brand transition-colors">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Note content */}
+      <div className="px-4 py-4">
+        <div
+          className="max-h-56 overflow-y-auto pr-3"
+          style={{ scrollbarWidth: "thin", scrollbarColor: "var(--color-brand-muted) transparent" }}
+        >
+          <div className="flex gap-3">
+            <div className="w-[3px] rounded-full bg-brand flex-shrink-0 self-stretch" />
+            <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">{note}</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -32,6 +32,7 @@ export function CreateTaskDialog({
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
   const [dueDate, setDueDate] = useState("");
   const [tags, setTags] = useState("");
+  const [note, setNote] = useState("");
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const submitBtnRef = useRef<HTMLButtonElement>(null);
   const trpc = useTRPC();
@@ -81,6 +82,7 @@ export function CreateTaskDialog({
         title: title.trim(),
         status: defaultStatus,
         priority,
+        ...(note.trim() ? { note: note.trim() } : {}),
         ...(dueDate ? { dueDate: new Date(dueDate).toISOString() } : {}),
         ...(parsedTags.length ? { tags: parsedTags } : {}),
         ...(assigneeIds.length ? { assigneeIds } : {}),
@@ -114,6 +116,21 @@ export function CreateTaskDialog({
               placeholder="e.g. Design ERD for Notification"
               maxLength={500}
               className="w-full h-10 px-3 text-sm bg-surface border border-border rounded-[8px] outline-none focus:border-brand/60 focus:ring-2 focus:ring-brand/8 transition-all placeholder:text-muted-2"
+            />
+          </div>
+
+          {/* Note */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground-2">
+              Note <span className="font-normal text-muted">(optional)</span>
+            </label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Write a note to yourself about this task..."
+              maxLength={2000}
+              rows={3}
+              className="w-full px-3 py-2.5 text-sm bg-surface border border-border rounded-[8px] outline-none focus:border-brand/60 focus:ring-2 focus:ring-brand/8 transition-all placeholder:text-muted-2 resize-none"
             />
           </div>
 

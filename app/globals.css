@@ -137,7 +137,7 @@
 /* ─── Kimmy theme (kawaii — kimmy@email.dev only) ──────────────────────────── */
 :root[data-accent="kimmy"] {
   --color-brand: oklch(76% 0.115 356);
-  --color-brand-light: oklch(85% 0.082 356);
+  --color-brand-light: oklch(60% 0.16 356);
   --color-brand-dark: oklch(70% 0.125 356);
   --color-brand-foreground: oklch(99% 0.005 356);
   --color-brand-subtle: oklch(96.5% 0.030 4);

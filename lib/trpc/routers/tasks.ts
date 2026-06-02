@@ -8,6 +8,7 @@ import { emitToProject, emitToUser } from "@/lib/socket/server";
 const TaskInput = z.object({
   title: z.string().min(1).max(500),
   description: z.string().max(5000).optional(),
+  note: z.string().max(2000).optional().nullable(),
   status: z.nativeEnum(TaskStatus).optional(),
   priority: z.nativeEnum(Priority).optional(),
   assigneeIds: z.array(z.string()).max(20).optional(),
@@ -39,6 +40,7 @@ export const tasksRouter = router({
           projectId: input.projectId,
           title: taskData.title,
           description: taskData.description,
+          note: taskData.note ?? null,
           status: taskData.status ?? "BACKLOG",
           priority: taskData.priority ?? "MEDIUM",
           dueDate: dueDate ? new Date(dueDate) : undefined,

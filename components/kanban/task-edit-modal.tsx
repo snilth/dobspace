@@ -29,6 +29,7 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
     task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : ""
   );
   const [tags, setTags] = useState(task.tags.join(", "));
+  const [note, setNote] = useState(task.note ?? "");
   // Start with current assignee if any
   const [pendingIds, setPendingIds] = useState<string[]>(
     task.assignee ? [task.assignee.id] : []
@@ -54,7 +55,7 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
     // Update task fields
     const updated = await updateTask.mutateAsync({
       id: task.id,
-      data: { title: title.trim(), priority, tags: parsedTags, dueDate: dueDate ? new Date(dueDate).toISOString() : null },
+      data: { title: title.trim(), priority, tags: parsedTags, note: note.trim() || null, dueDate: dueDate ? new Date(dueDate).toISOString() : null },
     });
 
     // Sync assignees: add new, remove old
@@ -101,6 +102,15 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
             <label className="text-xs font-semibold text-foreground-2">Task name</label>
             <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} maxLength={500}
               className="w-full h-10 px-3 text-sm bg-surface border border-border rounded-[8px] outline-none focus:border-brand/60 focus:ring-2 focus:ring-brand/8 transition-all" />
+          </div>
+
+          {/* Note */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground-2">Note <span className="font-normal text-muted">(optional)</span></label>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)}
+              placeholder="Write a note to yourself about this task..."
+              maxLength={2000} rows={3}
+              className="w-full px-3 py-2.5 text-sm bg-surface border border-border rounded-[8px] outline-none focus:border-brand/60 focus:ring-2 focus:ring-brand/8 transition-all placeholder:text-muted-2 resize-none" />
           </div>
 
           {/* Priority */}

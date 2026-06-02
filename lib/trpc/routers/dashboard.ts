@@ -95,6 +95,7 @@ export const dashboardRouter = router({
           return {
             id: p.id,
             name: p.name,
+
             total: projectTotal,
             done: counts.DONE ?? 0,
             inProgress: counts.IN_PROGRESS ?? 0,

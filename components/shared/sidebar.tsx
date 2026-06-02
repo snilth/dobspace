@@ -120,9 +120,9 @@ export function Sidebar() {
                   active ? "bg-sidebar-active text-sidebar-active-text" : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground"
                 )}
               >
-                <item.icon className={cn("w-4 h-4 flex-shrink-0", active && "text-brand-light")} />
+                <item.icon className={cn("w-4 h-4 flex-shrink-0", active && "text-sidebar-active-text")} />
                 <span className="flex-1 whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-150">{item.label}</span>
-                {active && <div className="w-1 h-1 rounded-full bg-brand-light flex-shrink-0 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-150" />}
+                {active && <div className="w-1 h-1 rounded-full bg-sidebar-active-text flex-shrink-0 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-150" />}
               </Link>
             );
           })}
@@ -169,7 +169,7 @@ export function Sidebar() {
               pathname === "/settings" ? "bg-sidebar-active text-sidebar-active-text" : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground"
             )}
           >
-            <Settings className={cn("w-4 h-4 flex-shrink-0", pathname === "/settings" && "text-brand-light")} />
+            <Settings className={cn("w-4 h-4 flex-shrink-0", pathname === "/settings" && "text-sidebar-active-text")} />
             <span className="flex-1 whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-150">Settings</span>
           </Link>
         </nav>
@@ -220,7 +220,7 @@ function SortableProjectLink({ project, pathname, workspaceId }: {
       )}
     >
       <div className={cn("w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0", active ? "bg-brand/40" : "bg-sidebar-surface")}>
-        <Hash className={cn("w-2.5 h-2.5", active ? "text-brand-light" : "text-sidebar-muted")} />
+        <Hash className={cn("w-2.5 h-2.5", active ? "text-sidebar-active-text" : "text-sidebar-muted")} />
       </div>
       <ProjectNameCell project={project} workspaceId={workspaceId} />
 
@@ -332,7 +332,7 @@ function ProjectLink({ project, pathname }: { project: Project; pathname: string
       )}
     >
       <div className={cn("w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0", active ? "bg-brand/40" : "bg-sidebar-surface")}>
-        <UserCircle2 className={cn("w-2.5 h-2.5", active ? "text-brand-light" : "text-sidebar-muted")} />
+        <UserCircle2 className={cn("w-2.5 h-2.5", active ? "text-sidebar-active-text" : "text-sidebar-muted")} />
       </div>
       <span className="flex-1 truncate whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-150">{project.name}</span>
       <ChevronRight className="w-3 h-3 flex-shrink-0 opacity-0 group-hover/item:opacity-40 transition-opacity" />
