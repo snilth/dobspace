@@ -66,31 +66,50 @@ export function NotificationSection({ workspaceId, initial }: Props) {
   });
 
   const trpc = useTRPC();
-  const update = useMutation(trpc.notificationPreference.update.mutationOptions());
+  const update = useMutation(trpc.notificationPreference.update.mutationOptions({
+    onError: () => {
+      // Rollback on failure — reload preferences from server on next visit
+      // For now just reset to initial values
+      setEvents({ ...defaultEvents, ...(initial.eventTypes as Partial<EventTypes>) });
+      setApproaching({ ...defaultApproaching, ...(initial.deadlineApproaching as Partial<DeadlineApproaching>) });
+      setOverdue({ ...defaultOverdue, ...(initial.deadlineOverdue as Partial<DeadlineOverdue>) });
+    },
+  }));
 
   function toggleEvent(key: keyof EventTypes) {
-    const next = { ...events, [key]: !events[key] };
+    const prev = events[key];
+    const next = { ...events, [key]: !prev };
     setEvents(next);
-    update.mutate({ workspaceId, eventTypes: next });
+    update.mutate({ workspaceId, eventTypes: next }, {
+      onError: () => setEvents(e => ({ ...e, [key]: prev })),
+    });
   }
 
   function updateApproaching(patch: Partial<DeadlineApproaching>) {
     const next = { ...approaching, ...patch };
     setApproaching(next);
-    update.mutate({ workspaceId, deadlineApproaching: next });
+    update.mutate({ workspaceId, deadlineApproaching: next }, {
+      onError: () => setApproaching(approaching),
+    });
   }
 
   function updateOverdue(patch: Partial<DeadlineOverdue>) {
     const next = { ...overdue, ...patch };
     setOverdue(next);
-    update.mutate({ workspaceId, deadlineOverdue: next });
+    update.mutate({ workspaceId, deadlineOverdue: next }, {
+      onError: () => setOverdue(overdue),
+    });
   }
 
   return (
     <Section title="Notifications" description="Choose which events to be notified about">
       {/* Event toggles */}
       <div className="pb-5 mb-5 border-b border-border">
-        <p className="text-xs font-semibold text-foreground-2 mb-3">Task activity</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold text-foreground-2">Task activity</p>
+          {update.isPending && <span className="text-[10px] text-muted animate-pulse">Saving…</span>}
+          {update.isError && <span className="text-[10px] text-error">Failed to save</span>}
+        </div>
         <div className="space-y-2">
           {(Object.keys(EVENT_LABELS) as (keyof EventTypes)[]).map((key) => (
             <Toggle
@@ -98,6 +117,7 @@ export function NotificationSection({ workspaceId, initial }: Props) {
               label={EVENT_LABELS[key]}
               checked={events[key]}
               onChange={() => toggleEvent(key)}
+              disabled={update.isPending}
             />
           ))}
         </div>
@@ -163,25 +183,27 @@ export function NotificationSection({ workspaceId, initial }: Props) {
   );
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
+function Toggle({ label, checked, onChange, disabled }: { label: string; checked: boolean; onChange: () => void; disabled?: boolean }) {
   return (
     <div className="flex items-center justify-between py-1.5">
-      <span className="text-[13px] text-foreground">{label}</span>
-      <ToggleSwitch checked={checked} onChange={onChange} />
+      <span className={cn("text-[13px]", disabled ? "text-muted" : "text-foreground")}>{label}</span>
+      <ToggleSwitch checked={checked} onChange={onChange} disabled={disabled} />
     </div>
   );
 }
 
-function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+function ToggleSwitch({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
         "relative w-10 h-6 rounded-full transition-colors duration-200 flex-shrink-0",
-        checked ? "bg-brand" : "bg-surface-3 border border-border-strong"
+        checked ? "bg-brand" : "bg-surface-3 border border-border-strong",
+        disabled && "opacity-50 cursor-not-allowed"
       )}
     >
       <span className={cn(
