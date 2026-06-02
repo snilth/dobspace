@@ -180,7 +180,7 @@ export function SprintDetail({
           )}
           <div className="flex items-center gap-3 mt-1.5">
             <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full", meta.badge)}>{meta.label}</span>
-            <span className="text-[12px] text-muted">{fmt(sprint.startDate)} → {fmt(sprint.endDate)}</span>
+            <span className="text-[12px] text-muted">{fmt(sprint.startDate)} – {fmt(sprint.endDate)}</span>
             <span className="text-[12px] text-muted">{done}/{total} tasks done</span>
           </div>
         </div>

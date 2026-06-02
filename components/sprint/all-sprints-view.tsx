@@ -337,7 +337,7 @@ const tabSprints = sprints.filter((s) => s.status === activeTab);
                           </div>
                           <div className="flex items-center gap-3 flex-shrink-0 text-right">
                             <div>
-                              <p className="text-[12px] text-muted">{fmt(sprint.startDate)} → {fmt(sprint.endDate)}</p>
+                              <p className="text-[12px] text-muted">{fmt(sprint.startDate)} – {fmt(sprint.endDate)}</p>
                               {sprint.status === "ACTIVE" && (
                                 <p className={cn("text-[11px] font-medium mt-0.5", isOverdue ? "text-[oklch(42%_0.21_27)]" : "text-muted")}>
                                   {isOverdue ? `${Math.abs(daysLeft)}d overdue` : daysLeft === 0 ? "Due today" : `${daysLeft}d left`}

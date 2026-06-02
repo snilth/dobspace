@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bot, Send, Sparkles, X } from "lucide-react";
+import { Bot, Send, X } from "lucide-react";
 import { CatIcon } from "@/components/shared/cat-icon";
-
+import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 
 type Message = {
@@ -163,7 +163,11 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
                     ? "bg-brand text-brand-foreground rounded-tr-md"
                     : "bg-surface-2 text-foreground rounded-tl-md border border-border"
                 )}>
-                  <MarkdownText text={msg.content} />
+                  {msg.role === "user" ? (
+                    <span style={{ whiteSpace: "pre-wrap" }}>{msg.content}</span>
+                  ) : (
+                    <ChatMarkdown content={msg.content} />
+                  )}
                   {msg.isStreaming && (
                     <span className="inline-flex gap-0.5 ml-1 items-end">
                       {[0, 1, 2].map((i) => (
@@ -216,18 +220,39 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
   );
 }
 
-function MarkdownText({ text }: { text: string }) {
-  if (!text) return null;
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+function ChatMarkdown({ content }: { content: string }) {
+  if (!content) return null;
   return (
-    <>
-      {parts.map((part, i) => {
-        if (part.startsWith("**") && part.endsWith("**"))
-          return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
-        if (part.startsWith("*") && part.endsWith("*"))
-          return <em key={i} className="italic opacity-80">{part.slice(1, -1)}</em>;
-        return <span key={i} style={{ whiteSpace: "pre-wrap" }}>{part}</span>;
-      })}
-    </>
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+        em: ({ children }) => <em className="italic opacity-80">{children}</em>,
+        ul: ({ children }) => <ul className="mb-2 space-y-1 pl-4 list-disc">{children}</ul>,
+        ol: ({ children }) => <ol className="mb-2 space-y-1 pl-4 list-decimal">{children}</ol>,
+        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+        h1: ({ children }) => <p className="font-bold text-[14px] mb-1.5 mt-2 first:mt-0">{children}</p>,
+        h2: ({ children }) => <p className="font-bold text-[13px] mb-1 mt-2 first:mt-0">{children}</p>,
+        h3: ({ children }) => <p className="font-semibold mb-1 mt-1.5 first:mt-0">{children}</p>,
+        code: ({ children }) => (
+          <code className="bg-surface-3 border border-border rounded px-1 py-0.5 text-[12px] font-mono">
+            {children}
+          </code>
+        ),
+        pre: ({ children }) => (
+          <pre className="bg-surface-3 border border-border rounded-lg p-3 text-[12px] font-mono overflow-x-auto mb-2">
+            {children}
+          </pre>
+        ),
+        hr: () => <hr className="border-border my-2" />,
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-2 border-brand/40 pl-3 italic opacity-80 mb-2">
+            {children}
+          </blockquote>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
   );
 }

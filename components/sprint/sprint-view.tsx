@@ -124,7 +124,7 @@ export function SprintView({ projectId, workspaceId, canManage }: Props) {
                       {sprint.name}
                     </p>
                     <p className="text-[11px] text-muted mt-0.5">
-                      {fmt(sprint.startDate)} → {fmt(sprint.endDate)}
+                      {fmt(sprint.startDate)} – {fmt(sprint.endDate)}
                     </p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", meta.badge)}>
