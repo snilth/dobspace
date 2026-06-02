@@ -29,10 +29,8 @@ const themeScript = `(function(){
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th" className={`${geistSans.variable} ${geistMono.variable} h-full`} suppressHydrationWarning>
-      <head>
-        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="h-full antialiased">
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeScript }} />
         <TRPCReactProvider><ThemeProvider>{children}</ThemeProvider></TRPCReactProvider>
       </body>
     </html>

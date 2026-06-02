@@ -1,0 +1,18 @@
+name: Purge dismissed notifications
+
+on:
+  schedule:
+    - cron: "0 2 * * 0"  # every Sunday at 2am UTC
+  workflow_dispatch:       # allow manual trigger
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call purge endpoint
+        run: |
+          curl -s -o response.json -w "%{http_code}" \
+            -X POST "${{ secrets.APP_URL }}/api/purge-notifications" \
+            -H "x-purge-secret: ${{ secrets.PURGE_SECRET }}" \
+            -H "Content-Type: application/json"
+          cat response.json

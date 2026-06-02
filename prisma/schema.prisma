@@ -298,13 +298,15 @@ model NotificationPreference {
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  taskId    String?
-  type      NotificationType
-  message   String
-  read      Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  id          String           @id @default(cuid())
+  userId      String
+  taskId      String?
+  type        NotificationType
+  message     String
+  read        Boolean          @default(false)
+  dismissed   Boolean          @default(false)
+  dismissedAt DateTime?
+  createdAt   DateTime         @default(now())
 
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
