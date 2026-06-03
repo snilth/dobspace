@@ -11,7 +11,7 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
     autoSignIn: false,
-    requireEmailVerification: true,
+    requireEmailVerification: process.env.NODE_ENV === "production",
   },
   emailVerification: {
     sendOnSignIn: true,

@@ -1,7 +1,7 @@
 import { createServerCaller } from "@/lib/trpc/server";
 import { getSession } from "@/lib/auth/session";
 import { KanbanBoard, type BoardTask } from "@/components/kanban/kanban-board";
-import { LayoutGrid, Layers } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { ProjectTeamButton } from "@/components/shared/project-team-button";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -29,7 +29,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   const canManage = isProjectWorkspaceOwner || currentUserProjectPermission === "MANAGER";
 
-  const memberTagMap = new Map(project.members.map((m) => [m.userId, m.tag]));
+  const memberTagMap = new Map(project.members.map((m): [string, string | null] => [m.userId, m.tag ?? null]));
 
   const tasks: BoardTask[] = project.tasks.map((t) => {
     const assigneeUser = t.assignees[0]?.user ?? null;
@@ -48,8 +48,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     };
   });
 
-  const activeSprint = project.sprints.find((s) => s.status === "ACTIVE");
-
   return (
     <div className="flex h-full min-h-screen flex-col">
       <div className="flex items-center justify-between px-6 h-[54px] border-b border-border bg-card flex-shrink-0">
@@ -58,17 +56,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             <span className="text-[13px] font-bold text-brand">{project.name[0]}</span>
           </div>
           <span className="font-semibold text-foreground text-[14px]">{project.name}</span>
-          {activeSprint && (
-            <span className="text-[11px] font-semibold bg-[oklch(93%_0.05_148)] text-[oklch(38%_0.17_148)] px-2.5 py-0.5 rounded-full">
-              {activeSprint.name} · Active
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-0.5">
           <HeaderBtn icon={<LayoutGrid className="w-4 h-4" />} label="Board" active />
-          <Link href={`/projects/${project.id}/sprints`}>
-            <HeaderBtn icon={<Layers className="w-4 h-4" />} label="Sprints" />
-          </Link>
           <ProjectTeamButton
             workspaceId={project.workspaceId}
             workspaceName=""

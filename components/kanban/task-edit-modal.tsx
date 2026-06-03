@@ -31,7 +31,6 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
   );
   const [tags, setTags] = useState(task.tags.join(", "));
   const [note, setNote] = useState(task.note ?? "");
-  // Start with current assignee if any
   const [pendingIds, setPendingIds] = useState<string[]>(
     task.assignee ? [task.assignee.id] : []
   );
@@ -42,6 +41,7 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
   const { data: projectMembers = [] } = useQuery(
     trpc.projects.members.queryOptions({ projectId: task.projectId, workspaceId })
   );
+
 
   const updateTask = useMutation(trpc.tasks.update.mutationOptions());
   const addAssignee = useMutation(trpc.tasks.addAssignee.mutationOptions());
@@ -56,7 +56,11 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
     // Update task fields
     const updated = await updateTask.mutateAsync({
       id: task.id,
-      data: { title: title.trim(), priority, tags: parsedTags, note: note.trim() || null, dueDate: dueDate ? new Date(dueDate).toISOString() : null },
+      data: {
+        title: title.trim(), priority, tags: parsedTags,
+        note: note.trim() || null,
+        dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+      },
     });
 
     // Sync assignees: add new, remove old

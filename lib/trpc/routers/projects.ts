@@ -94,7 +94,7 @@ export const projectsRouter = router({
           { workspaceId: { in: workspaceIds }, members: { some: { userId } } },
         ],
       },
-      include: { _count: { select: { tasks: true } }, sprints: { where: { status: "ACTIVE" }, take: 1 } },
+      include: { _count: { select: { tasks: true } } },
       orderBy: [{ order: "asc" }, { createdAt: "asc" }],
     });
 
@@ -115,7 +115,6 @@ export const projectsRouter = router({
         where,
         include: {
           _count: { select: { tasks: true } },
-          sprints: { where: { status: "ACTIVE" }, take: 1 },
         },
         orderBy: { createdAt: "desc" },
       });

@@ -88,7 +88,7 @@ function RegisterForm() {
             Kanban boards, AI-powered insights, and real-time collaboration — all in one place.
           </p>
           <div className="mt-10 space-y-3">
-            {["Real-time Kanban board", "AI assistant that knows your project", "Sprint tracking & team workload"].map((feat) => (
+            {["Real-time Kanban board", "AI assistant that knows your project", "Team collaboration & notifications"].map((feat) => (
               <div key={feat} className="flex items-center gap-3">
                 <CheckCircle2 className="w-4 h-4 text-brand flex-shrink-0" />
                 <span className="text-sm text-sidebar-muted">{feat}</span>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, FolderKanban, Settings,
-  ChevronRight, LogOut, Hash, UserCircle2, CalendarDays, Layers,
+  ChevronRight, LogOut, Hash, UserCircle2, CalendarDays,
 } from "lucide-react";
 import { NotificationBell } from "./notification-bell";
 import { CatIcon } from "./cat-icon";
@@ -29,7 +29,6 @@ const NAV_ITEMS = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
   { href: "/projects", icon: FolderKanban, label: "Projects" },
   { href: "/calendar", icon: CalendarDays, label: "Calendar" },
-  { href: "/sprints", icon: Layers, label: "Sprints" },
 ];
 
 type Project = { id: string; name: string; isOwned: boolean };
@@ -229,11 +228,13 @@ function SortableProjectLink({ project, pathname, workspaceId }: {
         {...attributes}
         {...listeners}
         className={cn(
-          "flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center transition-all cursor-grab active:cursor-grabbing",
+          "flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center transition-all",
           "opacity-0 group-hover/sidebar:group-hover/item:opacity-40 hover:!opacity-70",
           "text-sidebar-muted hover:bg-[oklch(25%_0.02_228)]"
         )}
-        title="Drag to reorder"
+        style={{ cursor: "grab" }}
+        onMouseDown={(e) => e.currentTarget.style.cursor = "grabbing"}
+        onMouseUp={(e) => e.currentTarget.style.cursor = "grab"}
       >
         <svg className="w-2.5 h-2.5" viewBox="0 0 8 14" fill="currentColor">
           <circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/>

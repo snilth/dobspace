@@ -71,8 +71,8 @@ function KanbanColumn({ column, tasks, projectId, workspaceId, canAssign, permis
   return (
     <div className="flex flex-col flex-1 min-w-[220px]">
       <div className={cn(
-        "flex items-center justify-between px-3 py-2.5 rounded-xl mb-2.5 border border-transparent",
-        column.bg, isOver && "border-dashed border-border-strong"
+        "flex items-center justify-between px-3 py-2.5 rounded-xl mb-2.5",
+        column.bg
       )}>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: column.dot }} />
@@ -87,7 +87,7 @@ function KanbanColumn({ column, tasks, projectId, workspaceId, canAssign, permis
         </button>
       </div>
 
-      <div ref={setNodeRef} className={cn("flex-1 space-y-2 min-h-20 rounded-xl p-1.5 transition-colors", isOver && "bg-brand-subtle ring-2 ring-brand/20 ring-dashed")}>
+      <div ref={setNodeRef} className={cn("flex-1 space-y-2 min-h-20 rounded-xl p-1.5 transition-colors", isOver && "bg-brand-subtle/70")}>
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <TaskCard

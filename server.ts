@@ -1,10 +1,9 @@
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
+
 import { createServer } from "node:http";
 import { parse } from "node:url";
 import next from "next";
-import * as dotenv from "dotenv";
-import { runDeadlineCheck } from "./lib/jobs/deadline-check";
-
-dotenv.config({ path: ".env.local" });
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.NODE_ENV === "production" ? "0.0.0.0" : "localhost";
@@ -25,6 +24,8 @@ app.prepare().then(() => {
 
   // Deadline notification job — runs every 30 minutes
   const THIRTY_MIN = 30 * 60 * 1000;
-  runDeadlineCheck().catch(console.error);
-  setInterval(() => runDeadlineCheck().catch(console.error), THIRTY_MIN);
+  import("./lib/jobs/deadline-check").then(({ runDeadlineCheck }) => {
+    runDeadlineCheck().catch(console.error);
+    setInterval(() => runDeadlineCheck().catch(console.error), THIRTY_MIN);
+  });
 });

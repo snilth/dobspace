@@ -47,11 +47,6 @@ export async function buildWorkspaceContext(workspaceId: string): Promise<Worksp
             assignees: { take: 1, include: { user: { select: { name: true } } } },
           },
         },
-        sprints: {
-          where: { status: "ACTIVE" },
-          select: { name: true, endDate: true },
-          take: 1,
-        },
       },
       orderBy: { order: "asc" },
     }),
@@ -100,19 +95,10 @@ export async function buildWorkspaceContext(workspaceId: string): Promise<Worksp
       }
     }
 
-    const sprint = project.sprints[0] ?? null;
-    const sprintEnd = sprint ? new Date(sprint.endDate) : null;
-    if (sprintEnd) sprintEnd.setHours(0, 0, 0, 0);
-    const daysLeft = sprintEnd
-      ? Math.round((sprintEnd.getTime() - today.getTime()) / 86400000)
-      : 0;
-
     return {
       name: project.name,
       taskCounts,
-      activeSprint: sprint
-        ? { name: sprint.name, endDate: sprintEnd!.toISOString().split("T")[0], daysLeft }
-        : null,
+      activeSprint: null,
       overdueTasks: overdueTasks.sort((a, b) => b.daysOverdue - a.daysOverdue),
       dueSoonTasks: dueSoonTasks.sort((a, b) => a.daysLeft - b.daysLeft),
       inProgressTasks,

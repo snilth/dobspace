@@ -15,7 +15,6 @@ type Project = {
   image?: string | null;
   isOwned?: boolean;
   _count: { tasks: number };
-  sprints: { name: string; status: string }[];
 };
 
 type Props = {
@@ -152,7 +151,6 @@ function ProjectCard({ project, workspaceId, isOwner, onUpdated, onDeleted }: {
   const [description, setDescription] = useState(project.description ?? "");
   const [image, setImage] = useState<string | null>(project.image ?? null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const activeSprint = project.sprints.find((s) => s.status === "ACTIVE");
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -293,12 +291,6 @@ function ProjectCard({ project, workspaceId, isOwner, onUpdated, onDeleted }: {
               {project.name[0]?.toUpperCase()}
             </span>
           )}
-          {/* Sprint badge overlay */}
-          {activeSprint && (
-            <span className="absolute bottom-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-black/40 text-white backdrop-blur-sm">
-              {activeSprint.name} · Active
-            </span>
-          )}
         </div>
       </Link>
 
@@ -326,7 +318,7 @@ function ProjectCard({ project, workspaceId, isOwner, onUpdated, onDeleted }: {
               <AlertTriangle className="w-5 h-5 text-error" />
             </div>
             <h2 className="text-[15px] font-bold text-foreground mb-1">Delete "{project.name}"?</h2>
-            <p className="text-[13px] text-muted mb-5">All tasks, sprints, and data will be permanently deleted and cannot be recovered.</p>
+            <p className="text-[13px] text-muted mb-5">All tasks, epics, and data will be permanently deleted and cannot be recovered.</p>
             <div className="flex gap-2">
               <button onClick={() => setConfirmDelete(false)}
                 className="flex-1 h-9 border border-border rounded-[8px] text-sm font-medium text-foreground-2 hover:bg-surface-2 transition-colors">

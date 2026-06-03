@@ -137,6 +137,7 @@ model Project {
 
   workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   sprints   Sprint[]
+  epics     Epic[]
   tasks     Task[]
   members   ProjectMember[]
 }
@@ -181,7 +182,6 @@ model Sprint {
   updatedAt DateTime     @updatedAt
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks   Task[]
 
   @@index([projectId, status])
 }
@@ -192,15 +192,33 @@ enum SprintStatus {
   COMPLETED
 }
 
+model Epic {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String
+  color     String   @default("#6366f1")
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@index([projectId])
+}
+
 model Task {
   id          String     @id @default(cuid())
   projectId   String
   sprintId    String?
+  epicId      String?
   title       String     @db.VarChar(500)
   description String?
   note        String?
   status      TaskStatus @default(BACKLOG)
   priority    Priority   @default(MEDIUM)
+  startDate   DateTime?
   dueDate     DateTime?
   tags        String[]
   order       Int        @default(0)
@@ -208,7 +226,7 @@ model Task {
   updatedAt   DateTime   @updatedAt
 
   project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  sprint        Sprint?        @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  epic          Epic?          @relation(fields: [epicId], references: [id], onDelete: SetNull)
   assignees     TaskAssignee[]
   notifications Notification[]
 
@@ -266,6 +284,7 @@ model ActivityLog {
 enum EntityType {
   TASK
   SPRINT
+  EPIC
   PROJECT
   MEMBER
 }
