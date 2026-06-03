@@ -270,6 +270,20 @@ export const workspaceRouter = router({
     .query(async ({ ctx, input }) => {
       await requireWorkspaceMember(ctx.prisma, ctx.session.user.id, input.workspaceId);
 
+      const userId = ctx.session.user.id;
+      const isOwner = await ctx.prisma.workspace.findUnique({
+        where: { id: input.workspaceId },
+        select: { ownerId: true },
+      }).then((ws) => ws?.ownerId === userId);
+
+      // Non-owners only export projects they are members of
+      const accessibleProjectIds = isOwner
+        ? undefined
+        : (await ctx.prisma.projectMember.findMany({
+            where: { project: { workspaceId: input.workspaceId }, userId },
+            select: { projectId: true },
+          })).map((p) => p.projectId);
+
       const workspace = await ctx.prisma.workspace.findUnique({
         where: { id: input.workspaceId },
         include: {
@@ -280,6 +294,7 @@ export const workspaceRouter = router({
             },
           },
           projects: {
+            where: accessibleProjectIds ? { id: { in: accessibleProjectIds } } : undefined,
             include: {
               sprints: true,
               members: {

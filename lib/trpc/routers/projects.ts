@@ -226,7 +226,7 @@ export const projectsRouter = router({
       await requireWorkspaceOwner(ctx.prisma, ctx.session.user.id, input.workspaceId);
       await ctx.prisma.$transaction(
         input.orderedIds.map((id, index) =>
-          ctx.prisma.project.update({ where: { id }, data: { order: index } })
+          ctx.prisma.project.update({ where: { id, workspaceId: input.workspaceId }, data: { order: index } })
         )
       );
       return { success: true };

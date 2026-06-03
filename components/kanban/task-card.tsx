@@ -5,6 +5,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CalendarDays, GripVertical, UserCircle2, Trash2, Pencil, X, SendHorizonal, CheckCircle2, XCircle, StickyNote } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
+import { isSafeImageSrc } from "@/components/shared/avatar";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import type { BoardTask } from "./kanban-board";
@@ -184,7 +185,7 @@ export function TaskCard({ task, workspaceId = "", canAssign = false, permission
             {task.assignee ? (
               <div className="flex items-center gap-1.5 min-w-0">
                 <div className="w-5 h-5 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {task.assignee.image
+                  {task.assignee.image && isSafeImageSrc(task.assignee.image)
                     ? <img src={task.assignee.image} alt={task.assignee.name} className="w-full h-full object-cover" />
                     : <span className="text-[9px] font-bold text-brand">{task.assignee.name.slice(0, 2).toUpperCase()}</span>}
                 </div>

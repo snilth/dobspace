@@ -5,6 +5,7 @@ import { X, Copy, Check, Users, UserPlus, Crown, Loader2, UserX, RefreshCw, Hash
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { isSafeImageSrc } from "@/components/shared/avatar";
 
 const PERM_LABEL: Record<string, string> = { VIEWER: "View only", EDITOR: "Can edit", MANAGER: "Can manage" };
 const PERM_DESC: Record<string, string> = {
@@ -273,7 +274,7 @@ export function InviteModal({ workspaceId, projectId, projectName, initialJoinCo
 function MemberAvatar({ name, image }: { name: string; image?: string | null }) {
   return (
     <div className="w-8 h-8 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-      {image
+      {image && isSafeImageSrc(image)
         ? <img src={image} alt={name} className="w-full h-full object-cover" />
         : <span className="text-[11px] font-bold text-brand">{name.slice(0, 2).toUpperCase()}</span>}
     </div>

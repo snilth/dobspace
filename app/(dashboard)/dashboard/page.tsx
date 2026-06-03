@@ -6,6 +6,7 @@ import {
   CheckCircle2, Clock, AlertCircle,
   ListTodo, Users, TrendingUp,
 } from "lucide-react";
+import { isSafeImageSrc } from "@/components/shared/avatar";
 
 
 export default async function DashboardPage() {
@@ -129,7 +130,7 @@ export default async function DashboardPage() {
                   <div key={m.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
                     {/* Avatar */}
                     <div className="w-9 h-9 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
-                      {m.user.image
+                      {m.user.image && isSafeImageSrc(m.user.image)
                         ? <img src={m.user.image} alt={m.user.name} className="w-full h-full object-cover" />
                         : <span className="text-[11px] font-bold text-brand">{m.user.name.slice(0, 2).toUpperCase()}</span>}
                     </div>

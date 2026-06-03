@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { useSession, signOut } from "@/lib/auth/client";
+import { isSafeImageSrc } from "@/components/shared/avatar";
 import { destroyPusherClient } from "@/lib/pusher/client";
 import { useTheme } from "./theme-provider";
 import { useState, useCallback, useRef } from "react";
@@ -178,7 +179,7 @@ export function Sidebar() {
         <div className="px-2 pb-3 pt-2 border-t border-sidebar-border flex-shrink-0">
           <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-sidebar-hover transition-colors">
             <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-sidebar-border">
-              {session?.user.image ? (
+              {session?.user.image && isSafeImageSrc(session.user.image) ? (
                 <img src={session.user.image} alt={userName} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-sidebar-active flex items-center justify-center">

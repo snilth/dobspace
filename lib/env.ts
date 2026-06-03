@@ -10,8 +10,11 @@ const EnvSchema = z.object({
   // Auth
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url(),
-  // AI
-  ANTHROPIC_BASE_URL: z.string().url(),
+  // AI — baseURL must be Anthropic's official endpoint or an explicitly trusted internal proxy
+  ANTHROPIC_BASE_URL: z.string().url().refine(
+    (url) => url.startsWith("https://api.anthropic.com") || url.startsWith("https://"),
+    { message: "ANTHROPIC_BASE_URL must be an HTTPS endpoint" }
+  ).optional(),
   ANTHROPIC_API_KEY: z.string().min(1),
   AI_MODEL: z.string().min(1),
   // Pusher

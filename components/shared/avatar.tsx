@@ -14,7 +14,7 @@ const SIZE = {
   lg: "w-10 h-10 text-[13px]",
 };
 
-function isSafeImageSrc(src: string): boolean {
+export function isSafeImageSrc(src: string): boolean {
   // Allow base64 data URLs (from avatar upload) and https URLs only
   if (src.startsWith("data:image/")) return true;
   try {

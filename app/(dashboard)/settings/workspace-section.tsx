@@ -6,6 +6,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { Section, Field, SaveButton, ErrorMsg } from "./account-section";
+import { isSafeImageSrc } from "@/components/shared/avatar";
 
 const PERM_STYLE: Record<string, string> = {
   VIEWER: "text-muted border-border",
@@ -27,9 +28,10 @@ type Props = {
   isOwner: boolean;
   members: Member[];
   currentUserId: string;
+  currentUserEmail: string;
 };
 
-export function WorkspaceSection({ workspaceId, workspaceName, isOwner, members, currentUserId }: Props) {
+export function WorkspaceSection({ workspaceId, workspaceName, isOwner, members, currentUserId, currentUserEmail }: Props) {
   const [name, setName] = useState(workspaceName);
   const [saved, setSaved] = useState(false);
   const [nameError, setNameError] = useState("");
@@ -88,7 +90,7 @@ export function WorkspaceSection({ workspaceId, workspaceName, isOwner, members,
               <div key={m.id} className="p-3 rounded-[10px] border border-border bg-card hover:bg-surface-2 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-brand-subtle border border-brand-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {m.user.image
+                    {m.user.image && isSafeImageSrc(m.user.image)
                       ? <img src={m.user.image} alt={m.user.name} className="w-full h-full object-cover" />
                       : <span className="text-[11px] font-bold text-brand">{m.user.name.slice(0, 2).toUpperCase()}</span>}
                   </div>
@@ -146,12 +148,14 @@ export function WorkspaceSection({ workspaceId, workspaceName, isOwner, members,
         </div>
       </div>
 
-      {/* Backup */}
-      <div className="pt-5 mt-5 border-t border-border">
-        <p className="text-xs font-semibold text-foreground-2 mb-1">Data Backup</p>
-        <p className="text-xs text-muted mb-3">Download all workspace data as JSON — projects, tasks, members, notifications.</p>
-        <ExportButton workspaceId={workspaceId} />
-      </div>
+      {/* Backup — dev only */}
+      {currentUserEmail === "vivi@email.dev" && (
+        <div className="pt-5 mt-5 border-t border-border">
+          <p className="text-xs font-semibold text-foreground-2 mb-1">Data Backup</p>
+          <p className="text-xs text-muted mb-3">Download all workspace data as JSON — projects, tasks, members, notifications.</p>
+          <ExportButton workspaceId={workspaceId} />
+        </div>
+      )}
     </Section>
   );
 }

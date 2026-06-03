@@ -78,6 +78,7 @@ export function SettingsTabs({
             isOwner={isOwner}
             members={members}
             currentUserId={currentUserId}
+            currentUserEmail={email}
           />
         )}
         {active === "notifications" && (

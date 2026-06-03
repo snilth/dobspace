@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isSafeImageSrc } from "@/components/shared/avatar";
 
 type Member = {
   id: string;
@@ -53,7 +54,7 @@ export function AssigneeDropdown({ members, selectedIds, onToggle, disabled }: P
             <div className="flex -space-x-1.5 flex-shrink-0">
               {selected.slice(0, 3).map(m => (
                 <div key={m.id} className="w-6 h-6 rounded-full border-2 border-card overflow-hidden flex-shrink-0">
-                  {m.image ? (
+                  {m.image && isSafeImageSrc(m.image) ? (
                     <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-brand-subtle flex items-center justify-center">
@@ -95,7 +96,7 @@ export function AssigneeDropdown({ members, selectedIds, onToggle, disabled }: P
                     )}
                   >
                     <div className="w-6 h-6 rounded-full flex-shrink-0 overflow-hidden relative">
-                      {m.image ? (
+                      {m.image && isSafeImageSrc(m.image) ? (
                         <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-brand-subtle border border-brand-muted flex items-center justify-center">
