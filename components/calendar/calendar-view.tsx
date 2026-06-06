@@ -29,6 +29,15 @@ const STATUS_BORDER: Record<string, string> = {
   BACKLOG:     "border-l-[4px] border-l-[oklch(55%_0.04_258)]",
 };
 
+const STATUS_OPTIONS = [
+  { value: "BACKLOG",     label: "Backlog",     dot: "bg-[oklch(55%_0.04_258)]" },
+  { value: "IN_PROGRESS", label: "In Progress", dot: "bg-[oklch(45%_0.25_228)]" },
+  { value: "REVIEW",      label: "Review",      dot: "bg-[oklch(52%_0.22_55)]"  },
+] as const;
+
+// Hidden by default — user can override; persisted in DB
+const DEFAULT_HIDDEN: string[] = ["BACKLOG"];
+
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
@@ -41,66 +50,92 @@ type CalendarTask = {
   assignee: { id: string; name: string; image: string | null; tag: string | null } | null;
 };
 
-const CALENDAR_FILTER_DEFAULT = ["BACKLOG"];
-
-function calendarCacheKey(workspaceId: string) {
+function cacheKey(workspaceId: string) {
   return `calendar-status-filter:${workspaceId}`;
 }
-
-function readCalendarCache(workspaceId: string): string[] | null {
+function readCache(workspaceId: string): string[] | null {
   try {
-    const stored = localStorage.getItem(calendarCacheKey(workspaceId));
-    if (stored) return JSON.parse(stored) as string[];
-  } catch {}
-  return null;
+    const v = localStorage.getItem(cacheKey(workspaceId));
+    return v ? (JSON.parse(v) as string[]) : null;
+  } catch { return null; }
 }
-
-function writeCalendarCache(workspaceId: string, hidden: string[]) {
-  try { localStorage.setItem(calendarCacheKey(workspaceId), JSON.stringify(hidden)); } catch {}
+function writeCache(workspaceId: string, hidden: string[]) {
+  try { localStorage.setItem(cacheKey(workspaceId), JSON.stringify(hidden)); } catch {}
 }
 
 export function CalendarView({ workspaceId }: { workspaceId: string }) {
   const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
+  const [year, setYear]   = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
+
+  // Always start with default (SSR-safe). Read localStorage + DB after mount.
+  const [hiddenStatuses, setHiddenStatuses] = useState<Set<string>>(new Set(DEFAULT_HIDDEN));
   const [hiddenProjects, setHiddenProjects] = useState<Set<string>>(new Set());
-  const [hiddenStatuses, setHiddenStatuses] = useState<Set<string>>(
-    () => new Set(readCalendarCache(workspaceId) ?? CALENDAR_FILTER_DEFAULT)
-  );
+
+  const [statusDropOpen,  setStatusDropOpen]  = useState(false);
+  const [projectDropOpen, setProjectDropOpen] = useState(false);
   const [editTask, setEditTask] = useState<CalendarTask | null>(null);
-  const [filterOpen, setFilterOpen] = useState(false);
-  const filterRef = useRef<HTMLDivElement>(null);
-  const trpc = useTRPC();
+
+  const statusDropRef  = useRef<HTMLDivElement>(null);
+  const projectDropRef = useRef<HTMLDivElement>(null);
+
+  const trpc        = useTRPC();
   const queryClient = useQueryClient();
 
-  const calendarFilterQuery = useQuery(
+  // ── Persistence ────────────────────────────────────────────────────────────
+
+  const filterQuery = useQuery(
     trpc.userPrefs.getCalendarFilter.queryOptions({ workspaceId })
   );
-  const setCalendarFilterMutation = useMutation(
+  const filterMutation = useMutation(
     trpc.userPrefs.setCalendarFilter.mutationOptions()
   );
 
+  // After mount: apply localStorage cache immediately (avoids SSR mismatch)
   useEffect(() => {
-    if (calendarFilterQuery.data !== undefined && calendarFilterQuery.data !== null) {
-      setHiddenStatuses(new Set(calendarFilterQuery.data));
-      writeCalendarCache(workspaceId, calendarFilterQuery.data);
+    const cached = readCache(workspaceId);
+    if (cached !== null) setHiddenStatuses(new Set(cached));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // When DB resolves: DB value wins (enables cross-device sync)
+  useEffect(() => {
+    if (filterQuery.data != null) {
+      setHiddenStatuses(new Set(filterQuery.data));
+      writeCache(workspaceId, filterQuery.data);
     }
-  }, [calendarFilterQuery.data, workspaceId]);
+  }, [filterQuery.data, workspaceId]);
+
+  function applyStatusToggle(status: string) {
+    setHiddenStatuses((prev) => {
+      const next = new Set(prev);
+      next.has(status) ? next.delete(status) : next.add(status);
+      const hidden = [...next] as ("BACKLOG" | "IN_PROGRESS" | "REVIEW" | "DONE")[];
+      writeCache(workspaceId, hidden);
+      filterMutation.mutate({ workspaceId, hiddenStatuses: hidden });
+      return next;
+    });
+  }
+
+  // ── Close dropdowns on outside click ───────────────────────────────────────
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (statusDropRef.current && !statusDropRef.current.contains(e.target as Node))
+        setStatusDropOpen(false);
+      if (projectDropRef.current && !projectDropRef.current.contains(e.target as Node))
+        setProjectDropOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // ── Data ───────────────────────────────────────────────────────────────────
 
   function handleTaskUpdated() {
     setEditTask(null);
     queryClient.invalidateQueries({ queryKey: trpc.calendar.tasks.queryKey({ workspaceId, year, month }) });
   }
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
-        setFilterOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
 
   const { data: tasks = [] } = useQuery({
     ...trpc.calendar.tasks.queryOptions({ workspaceId, year, month }),
@@ -108,7 +143,6 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
     staleTime: 0,
   });
 
-  // Assign stable color index per project
   const projectColorMap = useMemo(() => {
     const map = new Map<string, number>();
     tasks.forEach((t) => {
@@ -123,23 +157,10 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
     return [...seen.entries()].map(([id, name]) => ({ id, name }));
   }, [tasks]);
 
-  const visibleTasks = tasks.filter((t) =>
-    !hiddenProjects.has(t.project.id) &&
-    !hiddenStatuses.has(t.status)
+  const visibleTasks = tasks.filter(
+    (t) => !hiddenProjects.has(t.project.id) && !hiddenStatuses.has(t.status)
   );
 
-  function toggleStatus(status: string) {
-    setHiddenStatuses((prev) => {
-      const next = new Set(prev);
-      next.has(status) ? next.delete(status) : next.add(status);
-      const hidden = [...next] as ("BACKLOG" | "IN_PROGRESS" | "REVIEW" | "DONE")[];
-      writeCalendarCache(workspaceId, hidden);
-      setCalendarFilterMutation.mutate({ workspaceId, hiddenStatuses: hidden });
-      return next;
-    });
-  }
-
-  // Build day → tasks map
   const tasksByDay = useMemo(() => {
     const map = new Map<number, CalendarTask[]>();
     visibleTasks.forEach((t) => {
@@ -150,10 +171,9 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
     return map;
   }, [visibleTasks]);
 
-  // Calendar grid
-  const daysInMonth = new Date(year, month, 0).getDate();
+  const daysInMonth  = new Date(year, month, 0).getDate();
   const firstWeekday = new Date(year, month - 1, 1).getDay();
-  const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+  const totalCells   = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
 
   function prevMonth() {
     if (month === 1) { setMonth(12); setYear((y) => y - 1); }
@@ -175,6 +195,13 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
   const isToday = (day: number) =>
     day === today.getDate() && month === today.getMonth() + 1 && year === today.getFullYear();
 
+  // Status dropdown label
+  const visibleStatusCount = STATUS_OPTIONS.filter((s) => !hiddenStatuses.has(s.value)).length;
+  const statusLabel =
+    visibleStatusCount === STATUS_OPTIONS.length
+      ? "All statuses"
+      : `${visibleStatusCount} / ${STATUS_OPTIONS.length}`;
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -195,70 +222,43 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Status filters */}
-          {(["IN_PROGRESS", "REVIEW", "BACKLOG"] as const).map((status) => {
-            const active = !hiddenStatuses.has(status);
-            const meta = {
-              IN_PROGRESS: { label: "In Progress", dot: "bg-[oklch(45%_0.25_228)]" },
-              REVIEW:      { label: "Review",      dot: "bg-[oklch(52%_0.22_55)]"  },
-              BACKLOG:     { label: "Backlog",      dot: "bg-[oklch(55%_0.04_258)]" },
-            }[status];
-            return (
-              <button
-                key={status}
-                onClick={() => toggleStatus(status)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 h-8 rounded-lg border text-[13px] font-medium transition-colors",
-                  active
-                    ? "bg-surface-3 border-border text-foreground"
-                    : "bg-card border-border text-muted hover:text-foreground hover:bg-surface-2 opacity-50"
-                )}
-              >
-                <span className={cn("w-2 h-2 rounded-full", active ? meta.dot : "bg-muted")} />
-                {meta.label}
-              </button>
-            );
-          })}
 
-        {/* Project filter dropdown */}
-        {projects.length > 0 && (
-          <div className="relative" ref={filterRef}>
+          {/* Status filter dropdown */}
+          <div className="relative" ref={statusDropRef}>
             <button
-              onClick={() => setFilterOpen((v) => !v)}
+              onClick={() => setStatusDropOpen((v) => !v)}
               className="flex items-center gap-2 px-3 h-8 rounded-lg border border-border bg-card hover:bg-surface-2 text-[13px] text-foreground transition-colors"
             >
-              <span>
-                {hiddenProjects.size === 0
-                  ? "All projects"
-                  : `${projects.length - hiddenProjects.size} / ${projects.length}`}
-              </span>
+              <span>{statusLabel}</span>
               <ChevronDown className="w-3.5 h-3.5 text-muted" />
             </button>
 
-            {filterOpen && (
-              <div className="absolute right-0 top-10 z-20 w-52 rounded-xl border border-border bg-card shadow-lg py-1.5">
+            {statusDropOpen && (
+              <div className="absolute right-0 top-10 z-20 w-48 rounded-xl border border-border bg-card shadow-lg py-1.5">
                 <div className="flex items-center justify-between px-3 pb-1.5 mb-1 border-b border-border">
-                  <span className="text-[11px] font-semibold text-muted uppercase tracking-wide">Projects</span>
+                  <span className="text-[11px] font-semibold text-muted uppercase tracking-wide">Status</span>
                   <button
-                    onClick={() => setHiddenProjects(new Set())}
+                    onClick={() => {
+                      setHiddenStatuses(new Set());
+                      writeCache(workspaceId, []);
+                      filterMutation.mutate({ workspaceId, hiddenStatuses: [] });
+                    }}
                     className="text-[11px] text-brand hover:underline"
                   >
                     Show all
                   </button>
                 </div>
-                {projects.map((p) => {
-                  const ci = projectColorMap.get(p.id) ?? 0;
-                  const color = PROJECT_COLORS[ci];
-                  const visible = !hiddenProjects.has(p.id);
+                {STATUS_OPTIONS.map((s) => {
+                  const visible = !hiddenStatuses.has(s.value);
                   return (
                     <button
-                      key={p.id}
-                      onClick={() => toggleProject(p.id)}
+                      key={s.value}
+                      onClick={() => applyStatusToggle(s.value)}
                       className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-surface-2 transition-colors text-left"
                     >
-                      <span className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", color.dot)} />
-                      <span className={cn("flex-1 text-[13px] truncate", visible ? "text-foreground" : "text-muted line-through")}>
-                        {p.name}
+                      <span className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", s.dot)} />
+                      <span className={cn("flex-1 text-[13px]", visible ? "text-foreground" : "text-muted line-through")}>
+                        {s.label}
                       </span>
                       {visible && <Check className="w-3.5 h-3.5 text-brand flex-shrink-0" />}
                     </button>
@@ -267,13 +267,61 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
               </div>
             )}
           </div>
-        )}
+
+          {/* Project filter dropdown */}
+          {projects.length > 0 && (
+            <div className="relative" ref={projectDropRef}>
+              <button
+                onClick={() => setProjectDropOpen((v) => !v)}
+                className="flex items-center gap-2 px-3 h-8 rounded-lg border border-border bg-card hover:bg-surface-2 text-[13px] text-foreground transition-colors"
+              >
+                <span>
+                  {hiddenProjects.size === 0
+                    ? "All projects"
+                    : `${projects.length - hiddenProjects.size} / ${projects.length}`}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-muted" />
+              </button>
+
+              {projectDropOpen && (
+                <div className="absolute right-0 top-10 z-20 w-52 rounded-xl border border-border bg-card shadow-lg py-1.5">
+                  <div className="flex items-center justify-between px-3 pb-1.5 mb-1 border-b border-border">
+                    <span className="text-[11px] font-semibold text-muted uppercase tracking-wide">Projects</span>
+                    <button
+                      onClick={() => setHiddenProjects(new Set())}
+                      className="text-[11px] text-brand hover:underline"
+                    >
+                      Show all
+                    </button>
+                  </div>
+                  {projects.map((p) => {
+                    const ci = projectColorMap.get(p.id) ?? 0;
+                    const color = PROJECT_COLORS[ci];
+                    const visible = !hiddenProjects.has(p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => toggleProject(p.id)}
+                        className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-surface-2 transition-colors text-left"
+                      >
+                        <span className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", color.dot)} />
+                        <span className={cn("flex-1 text-[13px] truncate", visible ? "text-foreground" : "text-muted line-through")}>
+                          {p.name}
+                        </span>
+                        {visible && <Check className="w-3.5 h-3.5 text-brand flex-shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
 
-      {/* Calendar grid — fills remaining height, no outer scroll */}
+      {/* Calendar grid */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Weekday headers */}
         <div className="grid grid-cols-7 border-b border-border flex-shrink-0">
           {WEEKDAYS.map((d) => (
             <div key={d} className="py-2 text-center text-[11px] font-semibold text-muted uppercase tracking-wide">
@@ -282,7 +330,6 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
           ))}
         </div>
 
-        {/* Day cells — equal rows, each cell scrolls independently */}
         <div className="grid grid-cols-7 overflow-hidden" style={{ flex: 1, gridTemplateRows: `repeat(${totalCells / 7}, minmax(0, 1fr))` }}>
           {Array.from({ length: totalCells }, (_, i) => {
             const day = i - firstWeekday + 1;
@@ -302,13 +349,10 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
                   <>
                     <div className={cn(
                       "w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-medium flex-shrink-0 mt-2 ml-2 mb-1",
-                      isToday(day)
-                        ? "bg-brand text-brand-foreground"
-                        : "text-foreground"
+                      isToday(day) ? "bg-brand text-brand-foreground" : "text-foreground"
                     )}>
                       {day}
                     </div>
-
                     <div className="flex flex-col gap-1.5 overflow-y-auto px-2 pb-2 flex-1 min-h-0">
                       {dayTasks.map((task) => {
                         const ci = projectColorMap.get(task.project.id) ?? 0;
@@ -330,17 +374,11 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
                                 <p className="opacity-60 truncate text-[11px] mt-0.5">{task.project.name}</p>
                               </div>
                               {task.assignee?.image && (
-                                <img
-                                  src={task.assignee.image}
-                                  alt={task.assignee.name}
-                                  className="w-4 h-4 rounded-full flex-shrink-0 object-cover"
-                                />
+                                <img src={task.assignee.image} alt={task.assignee.name} className="w-4 h-4 rounded-full flex-shrink-0 object-cover" />
                               )}
                               {task.assignee && !task.assignee.image && (
                                 <div className="w-4 h-4 rounded-full flex-shrink-0 bg-surface-3 flex items-center justify-center">
-                                  <span className="text-[8px] font-bold text-muted">
-                                    {task.assignee.name.slice(0, 1).toUpperCase()}
-                                  </span>
+                                  <span className="text-[8px] font-bold text-muted">{task.assignee.name.slice(0, 1).toUpperCase()}</span>
                                 </div>
                               )}
                             </div>
@@ -356,7 +394,6 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
         </div>
       </div>
 
-      {/* Task edit modal */}
       {editTask && (
         <TaskEditModal
           task={editTask as unknown as BoardTask}
