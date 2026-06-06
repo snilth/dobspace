@@ -76,7 +76,7 @@ export function TaskCard({ task, workspaceId = "", canAssign = false, permission
       {noteOpen && (
         <div
           className="fixed inset-0 z-[39] bg-black/20 backdrop-blur-[1px]"
-          onClick={() => setNoteOpen(false)}
+          onClick={(e) => { e.stopPropagation(); setNoteOpen(false); }}
         />
       )}
 
@@ -271,6 +271,34 @@ export function TaskCard({ task, workspaceId = "", canAssign = false, permission
   );
 }
 
+const URL_REGEX = /https?:\/\/[^\s<>"]+/g;
+
+function renderNoteWithLinks(text: string) {
+  const nodes: React.ReactNode[] = [];
+  let last = 0;
+  let match;
+  URL_REGEX.lastIndex = 0;
+  while ((match = URL_REGEX.exec(text)) !== null) {
+    if (match.index > last) nodes.push(text.slice(last, match.index));
+    const url = match[0];
+    nodes.push(
+      <a
+        key={match.index}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="text-brand underline underline-offset-2 hover:text-brand-dark break-all"
+      >
+        {url}
+      </a>
+    );
+    last = match.index + url.length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
+}
+
 function NotePopover({ title, note, pos, onClose }: {
   title: string; note: string;
   pos: { top: number; left: number; side: "right" | "left" };
@@ -327,7 +355,7 @@ function NotePopover({ title, note, pos, onClose }: {
         >
           <div className="flex gap-3">
             <div className="w-[3px] rounded-full bg-brand flex-shrink-0 self-stretch" />
-            <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">{note}</p>
+            <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">{renderNoteWithLinks(note)}</p>
           </div>
         </div>
       </div>

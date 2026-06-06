@@ -42,6 +42,10 @@ export function MentionTextarea({ value, onChange, members, placeholder, rows = 
     }
   }
 
+  function handleBlur() {
+    setQuery(null);
+  }
+
   function insertMention(member: Member) {
     const textarea = ref.current;
     if (!textarea) return;
@@ -73,6 +77,7 @@ export function MentionTextarea({ value, onChange, members, placeholder, rows = 
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
         placeholder={placeholder}
         rows={rows}
         maxLength={maxLength}

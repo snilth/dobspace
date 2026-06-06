@@ -19,6 +19,7 @@ model User {
   updatedAt     DateTime @updatedAt
   themeAccent   String?
   themeMode     String?
+  kanbanFilters Json?
 
   sessions             Session[]
   accounts             Account[]

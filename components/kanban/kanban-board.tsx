@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
   type DragStartEvent, type DragEndEvent, closestCorners, useDroppable,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Plus, Eye } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { usePusherEvent } from "@/hooks/use-pusher";
 import { cn } from "@/lib/utils";
@@ -125,6 +125,24 @@ function KanbanColumn({ column, tasks, projectId, workspaceId, canAssign, permis
   );
 }
 
+const ALL_STATUSES: TaskStatus[] = ["BACKLOG", "IN_PROGRESS", "REVIEW", "DONE"];
+
+function getCacheKey(projectId: string, userId: string) {
+  return `kanban-col-filter:${projectId}:${userId}`;
+}
+
+function readCache(projectId: string, userId: string): TaskStatus[] | null {
+  try {
+    const stored = localStorage.getItem(getCacheKey(projectId, userId));
+    if (stored) return JSON.parse(stored) as TaskStatus[];
+  } catch {}
+  return null;
+}
+
+function writeCache(projectId: string, userId: string, cols: TaskStatus[]) {
+  try { localStorage.setItem(getCacheKey(projectId, userId), JSON.stringify(cols)); } catch {}
+}
+
 export function KanbanBoard({ initialTasks, projectId, workspaceId = "", currentUserId, permission = "EDITOR" }: {
   initialTasks: BoardTask[]; projectId: string; workspaceId?: string; currentUserId: string;
   permission?: "VIEWER" | "EDITOR" | "MANAGER";
@@ -134,6 +152,35 @@ export function KanbanBoard({ initialTasks, projectId, workspaceId = "", current
   const [tasks, setTasks] = useState<BoardTask[]>(initialTasks);
   const [activeTask, setActiveTask] = useState<BoardTask | null>(null);
   const [showViewerToast, setShowViewerToast] = useState(false);
+  const [visibleCols, setVisibleCols] = useState<TaskStatus[]>(
+    () => readCache(projectId, currentUserId) ?? ALL_STATUSES
+  );
+
+  const trpc = useTRPC();
+
+  const filterQuery = useQuery(
+    trpc.userPrefs.getKanbanFilter.queryOptions({ projectId })
+  );
+  const setFilterMutation = useMutation(
+    trpc.userPrefs.setKanbanFilter.mutationOptions()
+  );
+
+  useEffect(() => {
+    if (filterQuery.data) {
+      setVisibleCols(filterQuery.data);
+      writeCache(projectId, currentUserId, filterQuery.data);
+    }
+  }, [filterQuery.data, projectId, currentUserId]);
+
+  function toggleCol(status: TaskStatus) {
+    setVisibleCols((prev) => {
+      const next = prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status];
+      writeCache(projectId, currentUserId, next);
+      setFilterMutation.mutate({ projectId, visibleColumns: next });
+      return next;
+    });
+  }
+
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isViewer = permission === "VIEWER";
 
@@ -145,7 +192,6 @@ export function KanbanBoard({ initialTasks, projectId, workspaceId = "", current
     return true;
   }
 
-  const trpc = useTRPC();
   const moveTask = useMutation(trpc.tasks.move.mutationOptions());
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const channel = `private-project-${projectId}`;
@@ -229,10 +275,33 @@ export function KanbanBoard({ initialTasks, projectId, workspaceId = "", current
 
   return (
     <DndContext id="kanban-dnd" sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      {/* Column filter toolbar */}
+      <div className="flex items-center gap-2 px-6 pb-3">
+        <span className="text-[11px] font-semibold text-muted uppercase tracking-wide mr-1">Show</span>
+        {columns.map((col) => {
+          const active = visibleCols.includes(col.id);
+          return (
+            <button
+              key={col.id}
+              onClick={() => toggleCol(col.id)}
+              className={cn(
+                "flex items-center gap-1.5 h-7 px-2.5 rounded-lg border text-[11px] font-semibold transition-all",
+                active
+                  ? `${col.bg} ${col.headerText} border-transparent`
+                  : "bg-transparent text-muted border-border opacity-50 hover:opacity-80"
+              )}
+            >
+              <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: col.dot }} />
+              {col.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Viewer overlay — locks entire board */}
       <div className="relative">
         <div className="flex gap-4 px-6 pb-8 overflow-x-auto min-h-0 min-w-0">
-          {columns.map((column) => (
+          {columns.filter((col) => visibleCols.includes(col.id)).map((column) => (
             <KanbanColumn
               key={column.id}
               column={column}

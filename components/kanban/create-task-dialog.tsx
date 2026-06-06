@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
@@ -35,7 +35,6 @@ export function CreateTaskDialog({
   const [tags, setTags] = useState("");
   const [note, setNote] = useState("");
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
-  const submitBtnRef = useRef<HTMLButtonElement>(null);
   const trpc = useTRPC();
 
   const { data: members = [] } = useQuery(
@@ -61,9 +60,6 @@ export function CreateTaskDialog({
         });
         onClose();
       },
-      onError: () => {
-        if (submitBtnRef.current) submitBtnRef.current.disabled = false;
-      },
     })
   );
 
@@ -75,8 +71,7 @@ export function CreateTaskDialog({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || submitBtnRef.current?.disabled) return;
-    if (submitBtnRef.current) submitBtnRef.current.disabled = true;
+    if (!title.trim() || createTask.isPending) return;
     const parsedTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
     createTask.mutate({
       projectId,
@@ -200,7 +195,6 @@ export function CreateTaskDialog({
             </button>
             <button
               type="submit"
-              ref={submitBtnRef}
               disabled={!title.trim() || createTask.isPending}
               className="flex-1 h-9 bg-brand text-brand-foreground text-sm font-semibold rounded-[8px] hover:bg-brand-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
