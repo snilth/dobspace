@@ -72,11 +72,9 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
   const [hiddenStatuses, setHiddenStatuses] = useState<Set<string>>(new Set(DEFAULT_HIDDEN));
   const [hiddenProjects, setHiddenProjects] = useState<Set<string>>(new Set());
 
-  const [statusDropOpen,  setStatusDropOpen]  = useState(false);
   const [projectDropOpen, setProjectDropOpen] = useState(false);
   const [editTask, setEditTask] = useState<CalendarTask | null>(null);
 
-  const statusDropRef  = useRef<HTMLDivElement>(null);
   const projectDropRef = useRef<HTMLDivElement>(null);
 
   const trpc        = useTRPC();
@@ -121,8 +119,6 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (statusDropRef.current && !statusDropRef.current.contains(e.target as Node))
-        setStatusDropOpen(false);
       if (projectDropRef.current && !projectDropRef.current.contains(e.target as Node))
         setProjectDropOpen(false);
     }
@@ -195,12 +191,6 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
   const isToday = (day: number) =>
     day === today.getDate() && month === today.getMonth() + 1 && year === today.getFullYear();
 
-  // Status dropdown label
-  const visibleStatusCount = STATUS_OPTIONS.filter((s) => !hiddenStatuses.has(s.value)).length;
-  const statusLabel =
-    visibleStatusCount === STATUS_OPTIONS.length
-      ? "All statuses"
-      : `${visibleStatusCount} / ${STATUS_OPTIONS.length}`;
 
   return (
     <div className="flex flex-col h-full">
@@ -223,50 +213,25 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
 
         <div className="flex items-center gap-2">
 
-          {/* Status filter dropdown */}
-          <div className="relative" ref={statusDropRef}>
-            <button
-              onClick={() => setStatusDropOpen((v) => !v)}
-              className="flex items-center gap-2 px-3 h-8 rounded-lg border border-border bg-card hover:bg-surface-2 text-[13px] text-foreground transition-colors"
-            >
-              <span>{statusLabel}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-muted" />
-            </button>
-
-            {statusDropOpen && (
-              <div className="absolute right-0 top-10 z-20 w-48 rounded-xl border border-border bg-card shadow-lg py-1.5">
-                <div className="flex items-center justify-between px-3 pb-1.5 mb-1 border-b border-border">
-                  <span className="text-[11px] font-semibold text-muted uppercase tracking-wide">Status</span>
-                  <button
-                    onClick={() => {
-                      setHiddenStatuses(new Set());
-                      writeCache(workspaceId, []);
-                      filterMutation.mutate({ workspaceId, hiddenStatuses: [] });
-                    }}
-                    className="text-[11px] text-brand hover:underline"
-                  >
-                    Show all
-                  </button>
-                </div>
-                {STATUS_OPTIONS.map((s) => {
-                  const visible = !hiddenStatuses.has(s.value);
-                  return (
-                    <button
-                      key={s.value}
-                      onClick={() => applyStatusToggle(s.value)}
-                      className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-surface-2 transition-colors text-left"
-                    >
-                      <span className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", s.dot)} />
-                      <span className={cn("flex-1 text-[13px]", visible ? "text-foreground" : "text-muted line-through")}>
-                        {s.label}
-                      </span>
-                      {visible && <Check className="w-3.5 h-3.5 text-brand flex-shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {/* Status filter buttons */}
+          {STATUS_OPTIONS.map((s) => {
+            const active = !hiddenStatuses.has(s.value);
+            return (
+              <button
+                key={s.value}
+                onClick={() => applyStatusToggle(s.value)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 h-8 rounded-lg border text-[13px] font-medium transition-colors",
+                  active
+                    ? "bg-surface-3 border-border text-foreground"
+                    : "bg-card border-border text-muted hover:text-foreground hover:bg-surface-2 opacity-50"
+                )}
+              >
+                <span className={cn("w-2 h-2 rounded-full", active ? s.dot : "bg-muted")} />
+                {s.label}
+              </button>
+            );
+          })}
 
           {/* Project filter dropdown */}
           {projects.length > 0 && (
