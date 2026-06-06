@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { ChevronLeft, ChevronRight, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,17 +41,51 @@ type CalendarTask = {
   assignee: { id: string; name: string; image: string | null; tag: string | null } | null;
 };
 
+const CALENDAR_FILTER_DEFAULT = ["BACKLOG"];
+
+function calendarCacheKey(workspaceId: string) {
+  return `calendar-status-filter:${workspaceId}`;
+}
+
+function readCalendarCache(workspaceId: string): string[] | null {
+  try {
+    const stored = localStorage.getItem(calendarCacheKey(workspaceId));
+    if (stored) return JSON.parse(stored) as string[];
+  } catch {}
+  return null;
+}
+
+function writeCalendarCache(workspaceId: string, hidden: string[]) {
+  try { localStorage.setItem(calendarCacheKey(workspaceId), JSON.stringify(hidden)); } catch {}
+}
+
 export function CalendarView({ workspaceId }: { workspaceId: string }) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [hiddenProjects, setHiddenProjects] = useState<Set<string>>(new Set());
-  const [hiddenStatuses, setHiddenStatuses] = useState<Set<string>>(new Set(["BACKLOG"]));
+  const [hiddenStatuses, setHiddenStatuses] = useState<Set<string>>(
+    () => new Set(readCalendarCache(workspaceId) ?? CALENDAR_FILTER_DEFAULT)
+  );
   const [editTask, setEditTask] = useState<CalendarTask | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+
+  const calendarFilterQuery = useQuery(
+    trpc.userPrefs.getCalendarFilter.queryOptions({ workspaceId })
+  );
+  const setCalendarFilterMutation = useMutation(
+    trpc.userPrefs.setCalendarFilter.mutationOptions()
+  );
+
+  useEffect(() => {
+    if (calendarFilterQuery.data !== undefined && calendarFilterQuery.data !== null) {
+      setHiddenStatuses(new Set(calendarFilterQuery.data));
+      writeCalendarCache(workspaceId, calendarFilterQuery.data);
+    }
+  }, [calendarFilterQuery.data, workspaceId]);
 
   function handleTaskUpdated() {
     setEditTask(null);
@@ -98,6 +132,9 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
     setHiddenStatuses((prev) => {
       const next = new Set(prev);
       next.has(status) ? next.delete(status) : next.add(status);
+      const hidden = [...next] as ("BACKLOG" | "IN_PROGRESS" | "REVIEW" | "DONE")[];
+      writeCalendarCache(workspaceId, hidden);
+      setCalendarFilterMutation.mutate({ workspaceId, hiddenStatuses: hidden });
       return next;
     });
   }
