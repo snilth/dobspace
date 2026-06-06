@@ -6,7 +6,7 @@ import { requireProjectPermission } from "@/lib/trpc/guards";
 import { emitToProject, emitToUser } from "@/lib/socket/server";
 
 function extractMentionedFirstNames(text: string): string[] {
-  const matches = [...(text ?? "").matchAll(/@(\w+)/g)];
+  const matches = [...(text ?? "").matchAll(/@([^\s@]+)/g)];
   return [...new Set(matches.map(m => m[1].toLowerCase()))];
 }
 

@@ -27,7 +27,7 @@ export function MentionTextarea({ value, onChange, members, placeholder, rows = 
 
     const cursor = e.target.selectionStart ?? text.length;
     const before = text.slice(0, cursor);
-    const match = before.match(/@(\w*)$/);
+    const match = before.match(/@([^\s@]*)$/);
     if (match) {
       setQuery(match[1]);
       setMentionStart(cursor - match[0].length);
