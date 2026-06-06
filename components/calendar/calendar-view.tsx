@@ -30,9 +30,9 @@ const STATUS_BORDER: Record<string, string> = {
 };
 
 const STATUS_OPTIONS = [
-  { value: "BACKLOG",     label: "Backlog",     dot: "bg-[oklch(55%_0.04_258)]" },
-  { value: "IN_PROGRESS", label: "In Progress", dot: "bg-[oklch(45%_0.25_228)]" },
-  { value: "REVIEW",      label: "Review",      dot: "bg-[oklch(52%_0.22_55)]"  },
+  { value: "BACKLOG",     label: "Backlog",     bar: "bg-[oklch(55%_0.04_258)]" },
+  { value: "IN_PROGRESS", label: "In Progress", bar: "bg-[oklch(45%_0.25_228)]" },
+  { value: "REVIEW",      label: "Review",      bar: "bg-[oklch(52%_0.22_55)]"  },
 ] as const;
 
 // Hidden by default — user can override; persisted in DB
@@ -227,7 +227,7 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
                     : "bg-card border-border text-muted hover:text-foreground hover:bg-surface-2 opacity-50"
                 )}
               >
-                <span className={cn("w-2 h-2 rounded-full", active ? s.dot : "bg-muted")} />
+                <span className={cn("w-[3px] h-4 rounded-full", active ? s.bar : "bg-muted")} />
                 {s.label}
               </button>
             );
