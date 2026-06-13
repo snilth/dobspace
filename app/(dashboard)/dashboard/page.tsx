@@ -7,6 +7,7 @@ import {
   ListTodo, Users, TrendingUp,
 } from "lucide-react";
 import { isSafeImageSrc } from "@/components/shared/avatar";
+import { TodoListCard } from "@/components/dashboard/todo-list-card";
 
 
 export default async function DashboardPage() {
@@ -90,8 +91,10 @@ export default async function DashboardPage() {
           />
         </div>
 
-        {/* Right: workload + members */}
+        {/* Right: to-dos + workload + members */}
         <div className="space-y-5">
+          <TodoListCard workspaceId={workspaceId} />
+
           {stats.workload.length > 0 && (
             <Card title="Team Workload" icon={<Users className="w-3.5 h-3.5" />}>
               <div className="space-y-3">
