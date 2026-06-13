@@ -97,10 +97,12 @@ export function TodoListCard({ workspaceId }: { workspaceId: string }) {
   ];
 
   return (
-    <div className="bg-card rounded-card border border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
+    <div className="bg-card rounded-card border-t-[3px] border-t-brand border-x border-b border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-1.5">
-          <ListChecks className="w-3.5 h-3.5 text-muted" />
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-btn bg-brand-subtle text-brand flex items-center justify-center">
+            <ListChecks className="w-3.5 h-3.5" />
+          </div>
           <h2 className="text-[13px] font-semibold text-foreground">My To-Dos</h2>
         </div>
         {todos.length > 0 && (
@@ -112,7 +114,7 @@ export function TodoListCard({ workspaceId }: { workspaceId: string }) {
                 onClick={() => setFilter(f.id)}
                 className={cn(
                   "text-[11px] font-semibold px-2 py-1 rounded-full transition-colors",
-                  filter === f.id ? "bg-brand text-brand-foreground" : "text-muted hover:bg-surface-2"
+                  filter === f.id ? "bg-brand text-brand-foreground shadow-sm scale-[1.02]" : "text-muted hover:bg-surface-2"
                 )}
               >
                 {f.label} {f.count}

@@ -22,9 +22,11 @@ export function TeamCard({ workload, members, currentUserId, ownerId }: Props) {
   const maxCount = workload[0]?.count ?? 1;
 
   return (
-    <div className="bg-card rounded-card border border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
-      <div className="flex items-center gap-1.5 mb-4 pb-3 border-b border-border">
-        <Users className="w-3.5 h-3.5 text-muted" />
+    <div className="bg-card rounded-card border-t-[3px] border-t-brand border-x border-b border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
+      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
+        <div className="w-6 h-6 rounded-btn bg-brand-subtle text-brand flex items-center justify-center">
+          <Users className="w-3.5 h-3.5" />
+        </div>
         <h2 className="text-[13px] font-semibold text-foreground">Team ({members.length})</h2>
       </div>
 
@@ -47,7 +49,7 @@ export function TeamCard({ workload, members, currentUserId, ownerId }: Props) {
                     </div>
                     <span className="text-[11px] font-semibold text-muted">{w.count}</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-surface-3 overflow-hidden">
+                  <div className="h-2 rounded-full bg-brand-subtle overflow-hidden">
                     <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${pct}%` }} />
                   </div>
                 </div>

@@ -120,20 +120,22 @@ export function ActivityTabs({ projectProgress, recentActivity }: Props) {
   );
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-card rounded-[12px] border border-border shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
+    <div className="h-full flex flex-col overflow-hidden bg-card rounded-[12px] border-t-[3px] border-t-brand border-x border-b border-border shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
       {/* Header with tabs */}
-      <div className="flex items-center gap-1.5 px-4 pt-4 pb-0 border-b border-border shrink-0">
-        <Activity className="w-3.5 h-3.5 text-muted flex-shrink-0" />
-        <div className="flex items-center gap-0.5 ml-0.5">
+      <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-border shrink-0">
+        <div className="w-6 h-6 rounded-btn bg-brand-subtle text-brand flex items-center justify-center flex-shrink-0">
+          <Activity className="w-3.5 h-3.5" />
+        </div>
+        <div className="flex items-center gap-1.5 ml-0.5">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={cn(
-                "px-3 py-2 text-[13px] font-semibold rounded-t-lg transition-colors border-b-2 -mb-px",
+                "px-3 py-1.5 text-[13px] font-semibold rounded-full transition-colors",
                 tab === t.id
-                  ? "text-brand border-brand"
-                  : "text-muted border-transparent hover:text-foreground"
+                  ? "bg-brand text-brand-foreground"
+                  : "text-muted hover:text-foreground hover:bg-surface-2"
               )}
             >
               {t.label}
