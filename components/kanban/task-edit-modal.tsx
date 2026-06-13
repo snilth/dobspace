@@ -7,12 +7,19 @@ import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { AssigneeDropdown } from "./assignee-dropdown";
 import { MentionTextarea } from "@/components/shared/mention-textarea";
-import type { BoardTask } from "./kanban-board";
+import type { BoardTask, TaskStatus } from "./kanban-board";
 
 const PRIORITY_OPTS = [
   { value: "LOW", label: "Low", color: "text-[oklch(42%_0.17_148)]", bg: "bg-[oklch(95%_0.05_148)] border-[oklch(85%_0.09_148)]", active: "bg-[oklch(90%_0.08_148)] border-[oklch(75%_0.12_148)]" },
   { value: "MEDIUM", label: "Medium", color: "text-[oklch(42%_0.18_55)]", bg: "bg-[oklch(96%_0.05_55)] border-[oklch(85%_0.09_55)]", active: "bg-[oklch(91%_0.08_55)] border-[oklch(75%_0.12_55)]" },
   { value: "HIGH", label: "High", color: "text-[oklch(42%_0.21_27)]", bg: "bg-[oklch(96%_0.05_27)] border-[oklch(85%_0.09_27)]", active: "bg-[oklch(91%_0.08_27)] border-[oklch(75%_0.12_27)]" },
+] as const;
+
+const STATUS_OPTS = [
+  { value: "BACKLOG", label: "Backlog", color: "text-[oklch(42%_0.01_258)]", bg: "bg-[oklch(96%_0.004_258)] border-[oklch(88%_0.006_258)]", active: "bg-[oklch(91%_0.006_258)] border-[oklch(78%_0.01_258)]" },
+  { value: "IN_PROGRESS", label: "In Progress", color: "text-[oklch(40%_0.18_228)]", bg: "bg-[oklch(95%_0.04_228)] border-[oklch(85%_0.08_228)]", active: "bg-[oklch(90%_0.07_228)] border-[oklch(75%_0.12_228)]" },
+  { value: "REVIEW", label: "In Review", color: "text-[oklch(42%_0.17_55)]", bg: "bg-[oklch(96%_0.04_55)] border-[oklch(85%_0.09_55)]", active: "bg-[oklch(91%_0.07_55)] border-[oklch(75%_0.12_55)]" },
+  { value: "DONE", label: "Done", color: "text-[oklch(38%_0.17_148)]", bg: "bg-[oklch(95%_0.04_148)] border-[oklch(85%_0.08_148)]", active: "bg-[oklch(90%_0.07_148)] border-[oklch(75%_0.11_148)]" },
 ] as const;
 
 type Props = {
@@ -25,6 +32,7 @@ type Props = {
 
 export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClose, onUpdated }: Props) {
   const [title, setTitle] = useState(task.title);
+  const [status, setStatus] = useState<TaskStatus>(task.status);
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">(task.priority);
   const [dueDate, setDueDate] = useState(
     task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : ""
@@ -57,7 +65,7 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
     const updated = await updateTask.mutateAsync({
       id: task.id,
       data: {
-        title: title.trim(), priority, tags: parsedTags,
+        title: title.trim(), status, priority, tags: parsedTags,
         note: note.trim() || null,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
       },
@@ -80,6 +88,7 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
     onUpdated({
       ...task,
       title: updated.title,
+      status: updated.status as BoardTask["status"],
       priority: updated.priority as BoardTask["priority"],
       tags: updated.tags,
       note: updated.note ?? null,
@@ -108,6 +117,20 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
             <label className="text-xs font-semibold text-foreground-2">Task name</label>
             <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} maxLength={500}
               className="w-full h-10 px-3 text-sm bg-surface border border-border rounded-[8px] outline-none focus:border-brand/60 focus:ring-2 focus:ring-brand/8 transition-all" />
+          </div>
+
+          {/* Status */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-foreground-2">Status</label>
+            <div className="grid grid-cols-2 gap-2">
+              {STATUS_OPTS.map((s) => (
+                <button key={s.value} type="button" onClick={() => setStatus(s.value)}
+                  className={cn("py-2 text-xs font-semibold rounded-[8px] border transition-all",
+                    status === s.value ? `${s.active} ${s.color}` : `${s.bg} ${s.color} opacity-60 hover:opacity-100`)}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Note */}
