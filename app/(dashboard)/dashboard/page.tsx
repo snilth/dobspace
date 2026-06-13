@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ActivityTabs } from "@/components/dashboard/activity-tabs";
 import {
   CheckCircle2, Clock, AlertCircle,
-  ListTodo, Users, TrendingUp,
+  ListTodo, Users, TrendingUp, Plus,
 } from "lucide-react";
 import { isSafeImageSrc } from "@/components/shared/avatar";
 
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   return (
     <div className="p-6 max-w-[1280px] mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-muted mb-1 flex items-center gap-1.5">
             <TrendingUp className="w-3.5 h-3.5" />
@@ -42,7 +42,13 @@ export default async function DashboardPage() {
             <span className="font-medium text-foreground-2">{activeProjects.length}</span> active projects
           </p>
         </div>
-        <div />
+        <Link
+          href="/projects/new"
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-brand text-brand-foreground text-sm font-semibold rounded-btn hover:bg-brand-dark transition-all shadow-sm shadow-brand/20 flex-shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          New Project
+        </Link>
       </div>
 
       {/* KPI Cards */}
@@ -54,6 +60,7 @@ export default async function DashboardPage() {
           sub={`${donePercent}% done`}
           iconColor="text-brand"
           iconBg="bg-brand-subtle"
+          accent="bg-brand"
         />
         <KpiCard
           icon={<Clock className="w-4 h-4" />}
@@ -62,6 +69,7 @@ export default async function DashboardPage() {
           sub={`${stats.kpi.review} in review`}
           iconColor="text-[oklch(42%_0.18_228)]"
           iconBg="bg-[oklch(92%_0.05_228)]"
+          accent="bg-status-progress"
         />
         <KpiCard
           icon={<CheckCircle2 className="w-4 h-4" />}
@@ -70,6 +78,7 @@ export default async function DashboardPage() {
           sub={`${stats.kpi.backlog} in backlog`}
           iconColor="text-[oklch(40%_0.17_148)]"
           iconBg="bg-[oklch(92%_0.05_148)]"
+          accent="bg-status-done"
         />
         <KpiCard
           icon={<AlertCircle className="w-4 h-4" />}
@@ -78,6 +87,7 @@ export default async function DashboardPage() {
           sub="incomplete tasks"
           iconColor={stats.kpi.overdue > 0 ? "text-error" : "text-[oklch(40%_0.17_148)]"}
           iconBg={stats.kpi.overdue > 0 ? "bg-[oklch(93%_0.04_27)]" : "bg-[oklch(92%_0.05_148)]"}
+          accent={stats.kpi.overdue > 0 ? "bg-error" : "bg-status-done"}
         />
       </div>
 
@@ -183,17 +193,18 @@ export default async function DashboardPage() {
   );
 }
 
-function KpiCard({ icon, label, value, sub, iconColor, iconBg }: {
+function KpiCard({ icon, label, value, sub, iconColor, iconBg, accent }: {
   icon: React.ReactNode; label: string; value: number; sub: string;
-  iconColor: string; iconBg: string;
+  iconColor: string; iconBg: string; accent: string;
 }) {
   return (
-    <div className="p-4 rounded-[12px] border border-border bg-card">
-      <div className={`w-8 h-8 rounded-[8px] ${iconBg} flex items-center justify-center mb-3 ${iconColor}`}>
+    <div className="relative p-4 rounded-card border border-border bg-card overflow-hidden">
+      <div className={`absolute inset-y-0 left-0 w-1 ${accent}`} />
+      <div className={`w-8 h-8 rounded-btn ${iconBg} flex items-center justify-center mb-3 ${iconColor}`}>
         {icon}
       </div>
-      <p className="text-2xl font-bold text-foreground tracking-tight">{value}</p>
-      <p className="text-[12px] font-semibold text-foreground-2 mt-0.5">{label}</p>
+      <p className="text-[28px] font-bold text-foreground leading-none tracking-tight tabular-nums">{value}</p>
+      <p className="text-[12px] font-semibold text-foreground-2 mt-1.5">{label}</p>
       <p className="text-[11px] text-muted mt-0.5">{sub}</p>
     </div>
   );
@@ -201,7 +212,7 @@ function KpiCard({ icon, label, value, sub, iconColor, iconBg }: {
 
 function Card({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-card rounded-[12px] border border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
+    <div className="bg-card rounded-card border border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
       <div className="flex items-center gap-1.5 mb-4 pb-3 border-b border-border">
         <span className="text-muted">{icon}</span>
         <h2 className="text-[13px] font-semibold text-foreground">{title}</h2>

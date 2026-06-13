@@ -71,7 +71,7 @@ export function ActivityTabs({ projectProgress, recentActivity }: Props) {
   ];
 
   return (
-    <div className="bg-card rounded-[12px] border border-border shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
+    <div className="bg-card rounded-card border border-border shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
       {/* Header with tabs */}
       <div className="flex items-center gap-1.5 px-4 pt-4 pb-0 border-b border-border">
         <Activity className="w-3.5 h-3.5 text-muted flex-shrink-0" />
