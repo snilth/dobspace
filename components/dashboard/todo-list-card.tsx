@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ListChecks, Plus, X } from "lucide-react";
+import { Check, GripVertical, ListChecks, Plus, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Todo = { id: string; text: string; done: boolean };
+type Filter = "all" | "active" | "done";
 
 export function TodoListCard({ workspaceId }: { workspaceId: string }) {
   const storageKey = `dobspace.todos.${workspaceId}`;
@@ -12,6 +14,8 @@ export function TodoListCard({ workspaceId }: { workspaceId: string }) {
   const [input, setInput] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
+  const [dragId, setDragId] = useState<string | null>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -63,19 +67,58 @@ export function TodoListCard({ workspaceId }: { workspaceId: string }) {
     setEditingId(null);
   }
 
+  function handleDrop(targetId: string) {
+    setTodos((prev) => {
+      if (!dragId || dragId === targetId) return prev;
+      const from = prev.findIndex((t) => t.id === dragId);
+      const to = prev.findIndex((t) => t.id === targetId);
+      if (from === -1 || to === -1) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    setDragId(null);
+  }
+
+  const activeCount = todos.filter((t) => !t.done).length;
   const doneCount = todos.filter((t) => t.done).length;
+  const canReorder = filter === "all";
+  const visible = todos.filter((t) => {
+    if (filter === "active") return !t.done;
+    if (filter === "done") return t.done;
+    return true;
+  });
+
+  const filters: { id: Filter; label: string; count: number }[] = [
+    { id: "all", label: "All", count: todos.length },
+    { id: "active", label: "Active", count: activeCount },
+    { id: "done", label: "Done", count: doneCount },
+  ];
 
   return (
-    <div className="bg-card rounded-[12px] border border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
-      <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
+    <div className="bg-card rounded-card border border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
           <ListChecks className="w-3.5 h-3.5 text-muted" />
           <h2 className="text-[13px] font-semibold text-foreground">My To-Dos</h2>
         </div>
         {todos.length > 0 && (
-          <span className="text-[11px] font-semibold text-muted tabular-nums">
-            {doneCount}/{todos.length}
-          </span>
+          <div className="flex items-center gap-1">
+            {filters.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setFilter(f.id)}
+                className={cn(
+                  "text-[11px] font-semibold px-2 py-1 rounded-full transition-colors",
+                  filter === f.id ? "bg-brand text-brand-foreground" : "text-muted hover:bg-surface-2"
+                )}
+              >
+                {f.label} {f.count}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
@@ -102,15 +145,29 @@ export function TodoListCard({ workspaceId }: { workspaceId: string }) {
         </button>
       </form>
 
-      {!loaded ? null : todos.length === 0 ? (
-        <p className="text-[13px] text-muted text-center py-6">Nothing here yet — add your first little task!</p>
+      {!loaded ? null : visible.length === 0 ? (
+        <p className="text-[13px] text-muted text-center py-6">
+          {todos.length === 0 ? "Nothing here yet — add your first little task!" : "Nothing here."}
+        </p>
       ) : (
         <ul className="space-y-1 max-h-[260px] overflow-y-auto pr-1 -mr-1">
-          {todos.map((t) => (
+          {visible.map((t) => (
             <li
               key={t.id}
-              className="group flex items-center gap-2.5 px-1.5 py-1.5 rounded-btn hover:bg-surface-2 transition-colors"
+              draggable={canReorder}
+              onDragStart={() => setDragId(t.id)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleDrop(t.id)}
+              onDragEnd={() => setDragId(null)}
+              className={cn(
+                "group flex items-center gap-1.5 px-1.5 py-1.5 rounded-btn hover:bg-surface-2 transition-colors",
+                dragId === t.id && "opacity-40"
+              )}
             >
+              {canReorder && (
+                <GripVertical className="w-3.5 h-3.5 text-muted-2 opacity-0 group-hover:opacity-60 transition-opacity flex-shrink-0 cursor-grab" />
+              )}
+
               <button
                 type="button"
                 onClick={() => toggleTodo(t.id)}
