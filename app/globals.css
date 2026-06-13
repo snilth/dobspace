@@ -98,10 +98,30 @@
   --color-brand-muted: oklch(89% 0.1 88);
   --color-sidebar-active: oklch(24% 0.04 88);
   --color-sidebar-active-text: oklch(82% 0.14 88);
+
+  --background: oklch(99% 0.012 88);
+  --color-surface: oklch(99% 0.010 88);
+  --color-surface-2: oklch(97% 0.016 88);
+  --color-surface-3: oklch(94.5% 0.022 88);
+  --color-card: oklch(99.5% 0.008 88);
+  --color-border: oklch(91% 0.022 88);
+  --color-border-strong: oklch(83% 0.032 88);
+  --color-sidebar: oklch(13% 0.022 88);
+  --color-sidebar-surface: oklch(17% 0.026 88);
+  --color-sidebar-border: oklch(20% 0.022 88);
+  --color-sidebar-hover: oklch(20% 0.026 88);
 }
 :root.dark[data-accent="yellow"] {
   --color-brand-subtle: oklch(22% 0.05 88);
   --color-brand-muted: oklch(32% 0.09 88);
+
+  --background: oklch(16% 0.022 88);
+  --color-surface: oklch(18% 0.024 88);
+  --color-surface-2: oklch(21% 0.028 88);
+  --color-surface-3: oklch(25% 0.032 88);
+  --color-card: oklch(20% 0.026 88);
+  --color-border: oklch(30% 0.030 88);
+  --color-border-strong: oklch(40% 0.034 88);
 }
 
 :root[data-accent="blue"] {
@@ -113,10 +133,30 @@
   --color-brand-muted: oklch(88% 0.08 228);
   --color-sidebar-active: oklch(24% 0.05 228);
   --color-sidebar-active-text: oklch(78% 0.12 228);
+
+  --background: oklch(99% 0.012 228);
+  --color-surface: oklch(99% 0.010 228);
+  --color-surface-2: oklch(97% 0.016 228);
+  --color-surface-3: oklch(94.5% 0.022 228);
+  --color-card: oklch(99.5% 0.008 228);
+  --color-border: oklch(91% 0.022 228);
+  --color-border-strong: oklch(83% 0.032 228);
+  --color-sidebar: oklch(13% 0.022 228);
+  --color-sidebar-surface: oklch(17% 0.026 228);
+  --color-sidebar-border: oklch(20% 0.022 228);
+  --color-sidebar-hover: oklch(20% 0.026 228);
 }
 :root.dark[data-accent="blue"] {
   --color-brand-subtle: oklch(20% 0.05 228);
   --color-brand-muted: oklch(30% 0.08 228);
+
+  --background: oklch(16% 0.022 228);
+  --color-surface: oklch(18% 0.024 228);
+  --color-surface-2: oklch(21% 0.028 228);
+  --color-surface-3: oklch(25% 0.032 228);
+  --color-card: oklch(20% 0.026 228);
+  --color-border: oklch(30% 0.030 228);
+  --color-border-strong: oklch(40% 0.034 228);
 }
 
 :root[data-accent="pink"] {
@@ -128,10 +168,30 @@
   --color-brand-muted: oklch(89% 0.09 345);
   --color-sidebar-active: oklch(22% 0.055 345);
   --color-sidebar-active-text: oklch(78% 0.12 345);
+
+  --background: oklch(99% 0.012 345);
+  --color-surface: oklch(99% 0.010 345);
+  --color-surface-2: oklch(97% 0.016 345);
+  --color-surface-3: oklch(94.5% 0.022 345);
+  --color-card: oklch(99.5% 0.008 345);
+  --color-border: oklch(91% 0.022 345);
+  --color-border-strong: oklch(83% 0.032 345);
+  --color-sidebar: oklch(13% 0.022 345);
+  --color-sidebar-surface: oklch(17% 0.026 345);
+  --color-sidebar-border: oklch(20% 0.022 345);
+  --color-sidebar-hover: oklch(20% 0.026 345);
 }
 :root.dark[data-accent="pink"] {
   --color-brand-subtle: oklch(22% 0.06 345);
   --color-brand-muted: oklch(32% 0.09 345);
+
+  --background: oklch(16% 0.022 345);
+  --color-surface: oklch(18% 0.024 345);
+  --color-surface-2: oklch(21% 0.028 345);
+  --color-surface-3: oklch(25% 0.032 345);
+  --color-card: oklch(20% 0.026 345);
+  --color-border: oklch(30% 0.030 345);
+  --color-border-strong: oklch(40% 0.034 345);
 }
 
 /* ─── Kimmy theme (kawaii — kimmy@email.dev only) ──────────────────────────── */
@@ -209,10 +269,30 @@
   --color-brand-muted: oklch(87% 0.07 148);
   --color-sidebar-active: oklch(22% 0.05 148);
   --color-sidebar-active-text: oklch(73% 0.13 148);
+
+  --background: oklch(99% 0.012 148);
+  --color-surface: oklch(99% 0.010 148);
+  --color-surface-2: oklch(97% 0.016 148);
+  --color-surface-3: oklch(94.5% 0.022 148);
+  --color-card: oklch(99.5% 0.008 148);
+  --color-border: oklch(91% 0.022 148);
+  --color-border-strong: oklch(83% 0.032 148);
+  --color-sidebar: oklch(13% 0.022 148);
+  --color-sidebar-surface: oklch(17% 0.026 148);
+  --color-sidebar-border: oklch(20% 0.022 148);
+  --color-sidebar-hover: oklch(20% 0.026 148);
 }
 :root.dark[data-accent="green"] {
   --color-brand-subtle: oklch(20% 0.05 148);
   --color-brand-muted: oklch(30% 0.08 148);
+
+  --background: oklch(16% 0.022 148);
+  --color-surface: oklch(18% 0.024 148);
+  --color-surface-2: oklch(21% 0.028 148);
+  --color-surface-3: oklch(25% 0.032 148);
+  --color-card: oklch(20% 0.026 148);
+  --color-border: oklch(30% 0.030 148);
+  --color-border-strong: oklch(40% 0.034 148);
 }
 
 /* ─── Base ─────────────────────────────────────────────────────────────────── */
