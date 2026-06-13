@@ -5,7 +5,7 @@ import { Check, GripVertical, ListChecks, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Todo = { id: string; text: string; done: boolean };
-type Filter = "all" | "active" | "done";
+type Filter = "all" | "done";
 
 export function TodoListCard({ workspaceId }: { workspaceId: string }) {
   const storageKey = `dobspace.todos.${workspaceId}`;
@@ -81,18 +81,15 @@ export function TodoListCard({ workspaceId }: { workspaceId: string }) {
     setDragId(null);
   }
 
-  const activeCount = todos.filter((t) => !t.done).length;
   const doneCount = todos.filter((t) => t.done).length;
   const canReorder = filter === "all";
   const visible = todos.filter((t) => {
-    if (filter === "active") return !t.done;
     if (filter === "done") return t.done;
     return true;
   });
 
   const filters: { id: Filter; label: string; count: number }[] = [
     { id: "all", label: "All", count: todos.length },
-    { id: "active", label: "Active", count: activeCount },
     { id: "done", label: "Done", count: doneCount },
   ];
 

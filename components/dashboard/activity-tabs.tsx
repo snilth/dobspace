@@ -146,7 +146,7 @@ export function ActivityTabs({ projectProgress, recentActivity }: Props) {
 
       {/* Content */}
       <div className="p-4 flex-1 min-h-0 flex flex-col overflow-hidden">
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1 -mr-1">
           {tab === "progress" && (
             <div className="space-y-2.5">
               {progressItems.length === 0 ? (
