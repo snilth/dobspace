@@ -105,7 +105,7 @@ export function TodoListCard({ workspaceId }: { workspaceId: string }) {
       {!loaded ? null : todos.length === 0 ? (
         <p className="text-[13px] text-muted text-center py-6">Nothing here yet — add your first little task!</p>
       ) : (
-        <ul className="space-y-1">
+        <ul className="space-y-1 max-h-[260px] overflow-y-auto pr-1 -mr-1">
           {todos.map((t) => (
             <li
               key={t.id}
