@@ -28,9 +28,9 @@ export default async function DashboardPage() {
     : 0;
 
   return (
-    <div className="p-6 max-w-[1280px] mx-auto space-y-6">
+    <div className="p-6 max-w-[1280px] mx-auto flex flex-col gap-6 lg:h-full lg:overflow-hidden">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between lg:shrink-0">
         <div>
           <p className="text-xs font-medium text-muted mb-1 flex items-center gap-1.5">
             <TrendingUp className="w-3.5 h-3.5" />
@@ -47,7 +47,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:shrink-0">
         <KpiCard
           icon={<ListTodo className="w-4 h-4" />}
           label="Total Tasks"
@@ -82,9 +82,9 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:flex-1 lg:min-h-0 lg:overflow-hidden">
         {/* Left: tabbed card */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 lg:h-full lg:min-h-0">
           <ActivityTabs
             projectProgress={stats.projectProgress}
             recentActivity={stats.recentActivity}
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Right: to-dos + workload + members */}
-        <div className="space-y-5">
+        <div className="flex flex-col gap-5 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:-mr-1">
           <TodoListCard workspaceId={workspaceId} />
 
           {stats.workload.length > 0 && (
