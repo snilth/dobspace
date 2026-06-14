@@ -94,7 +94,7 @@ export function TodoListCard({ workspaceId }: { workspaceId: string }) {
   ];
 
   return (
-    <div className="bg-card rounded-card border-t-[3px] border-t-brand border-x border-b border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)] flex flex-col lg:flex-1 lg:min-h-0">
+    <div className="bg-card rounded-card border-t-[3px] border-t-brand border-x border-b border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-btn bg-brand-subtle text-brand flex items-center justify-center">
@@ -149,7 +149,7 @@ export function TodoListCard({ workspaceId }: { workspaceId: string }) {
           {todos.length === 0 ? "Nothing here yet — add your first little task!" : "Nothing here."}
         </p>
       ) : (
-        <ul className="space-y-1 max-h-[260px] overflow-y-auto pr-1 -mr-1 lg:max-h-none lg:flex-1 lg:min-h-0">
+        <ul className="space-y-1 max-h-[260px] overflow-y-auto pr-1 -mr-1">
           {visible.map((t) => (
             <li
               key={t.id}
