@@ -1,5 +1,5 @@
 import { createServerCaller } from "@/lib/trpc/server";
-import { CalendarView } from "@/components/calendar/calendar-view";
+import { CalendarPageClient } from "@/components/calendar/calendar-page-client";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 
@@ -12,7 +12,7 @@ export default async function CalendarPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <CalendarView workspaceId={workspace.id} />
+      <CalendarPageClient workspaceId={workspace.id} />
     </div>
   );
 }

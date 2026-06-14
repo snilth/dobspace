@@ -3,10 +3,11 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
-import { ChevronLeft, ChevronRight, ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TaskEditModal } from "@/components/kanban/task-edit-modal";
 import type { BoardTask } from "@/components/kanban/kanban-board";
+import { CalendarGrid } from "./calendar-grid";
 
 const PROJECT_COLORS = [
   { bg: "bg-[oklch(91%_0.06_228)]", dot: "bg-[oklch(52%_0.22_228)]", text: "text-[oklch(35%_0.18_228)]" },
@@ -37,9 +38,6 @@ const STATUS_OPTIONS = [
 
 // Hidden by default — user can override; persisted in DB
 const DEFAULT_HIDDEN: string[] = ["BACKLOG"];
-
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 type CalendarTask = {
   id: string; title: string; description?: string | null;
@@ -167,10 +165,6 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
     return map;
   }, [visibleTasks]);
 
-  const daysInMonth  = new Date(year, month, 0).getDate();
-  const firstWeekday = new Date(year, month - 1, 1).getDay();
-  const totalCells   = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
-
   function prevMonth() {
     if (month === 1) { setMonth(12); setYear((y) => y - 1); }
     else setMonth((m) => m - 1);
@@ -188,176 +182,119 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
     });
   }
 
-  const isToday = (day: number) =>
-    day === today.getDate() && month === today.getMonth() + 1 && year === today.getFullYear();
-
-
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <h1 className="text-[17px] font-semibold text-foreground">Calendar</h1>
-          <div className="flex items-center gap-1">
-            <button onClick={prevMonth} className="w-7 h-7 rounded-lg hover:bg-surface-3 flex items-center justify-center text-muted hover:text-foreground transition-colors">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-[14px] font-medium text-foreground min-w-[140px] text-center">
-              {MONTHS[month - 1]} {year}
-            </span>
-            <button onClick={nextMonth} className="w-7 h-7 rounded-lg hover:bg-surface-3 flex items-center justify-center text-muted hover:text-foreground transition-colors">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-
-          {/* Status filter buttons */}
-          {STATUS_OPTIONS.map((s) => {
-            const active = !hiddenStatuses.has(s.value);
-            return (
-              <button
-                key={s.value}
-                onClick={() => applyStatusToggle(s.value)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 h-8 rounded-lg border text-[13px] font-medium transition-colors",
-                  active
-                    ? "bg-surface-3 border-border text-foreground"
-                    : "bg-card border-border text-muted hover:text-foreground hover:bg-surface-2 opacity-50"
-                )}
-              >
-                <span className={cn("w-[3px] h-4 rounded-full", active ? s.bar : "bg-muted")} />
-                {s.label}
-              </button>
-            );
-          })}
-
-          {/* Project filter dropdown */}
-          {projects.length > 0 && (
-            <div className="relative" ref={projectDropRef}>
-              <button
-                onClick={() => setProjectDropOpen((v) => !v)}
-                className="flex items-center gap-2 px-3 h-8 rounded-lg border border-border bg-card hover:bg-surface-2 text-[13px] text-foreground transition-colors"
-              >
-                <span>
-                  {hiddenProjects.size === 0
-                    ? "All projects"
-                    : `${projects.length - hiddenProjects.size} / ${projects.length}`}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5 text-muted" />
-              </button>
-
-              {projectDropOpen && (
-                <div className="absolute right-0 top-10 z-20 w-52 rounded-xl border border-border bg-card shadow-lg py-1.5">
-                  <div className="flex items-center justify-between px-3 pb-1.5 mb-1 border-b border-border">
-                    <span className="text-[11px] font-semibold text-muted uppercase tracking-wide">Projects</span>
-                    <button
-                      onClick={() => setHiddenProjects(new Set())}
-                      className="text-[11px] text-brand hover:underline"
-                    >
-                      Show all
-                    </button>
-                  </div>
-                  {projects.map((p) => {
-                    const ci = projectColorMap.get(p.id) ?? 0;
-                    const color = PROJECT_COLORS[ci];
-                    const visible = !hiddenProjects.has(p.id);
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => toggleProject(p.id)}
-                        className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-surface-2 transition-colors text-left"
-                      >
-                        <span className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", color.dot)} />
-                        <span className={cn("flex-1 text-[13px] truncate", visible ? "text-foreground" : "text-muted line-through")}>
-                          {p.name}
-                        </span>
-                        {visible && <Check className="w-3.5 h-3.5 text-brand flex-shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
+      <CalendarGrid
+        title="Calendar"
+        year={year}
+        month={month}
+        onPrevMonth={prevMonth}
+        onNextMonth={nextMonth}
+        itemsByDay={tasksByDay}
+        renderItem={(task) => {
+          const ci = projectColorMap.get(task.project.id) ?? 0;
+          const color = PROJECT_COLORS[ci];
+          return (
+            <button
+              key={task.id}
+              onClick={() => setEditTask(task)}
+              className={cn(
+                "w-full text-left rounded-md pl-2 pr-1.5 py-1.5 text-[11.5px] leading-snug transition-opacity hover:opacity-80",
+                color.bg, color.text,
+                STATUS_BORDER[task.status]
               )}
-            </div>
-          )}
-
-        </div>
-      </div>
-
-      {/* Calendar grid */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-border flex-shrink-0">
-          {WEEKDAYS.map((d) => (
-            <div key={d} className="py-2 text-center text-[11px] font-semibold text-muted uppercase tracking-wide">
-              {d}
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 overflow-hidden" style={{ flex: 1, gridTemplateRows: `repeat(${totalCells / 7}, minmax(0, 1fr))` }}>
-          {Array.from({ length: totalCells }, (_, i) => {
-            const day = i - firstWeekday + 1;
-            const isValid = day >= 1 && day <= daysInMonth;
-            const dayTasks = isValid ? (tasksByDay.get(day) ?? []) : [];
-
-            return (
-              <div
-                key={i}
-                className={cn(
-                  "border-b border-r border-border flex flex-col overflow-hidden",
-                  !isValid && "bg-surface-2/30",
-                  isToday(day) && isValid && "bg-brand/3"
+            >
+              <div className="flex items-start gap-1.5">
+                <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[3px]", PRIORITY_DOT[task.priority])} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold truncate">{task.title}</p>
+                  <p className="opacity-60 truncate text-[11px] mt-0.5">{task.project.name}</p>
+                </div>
+                {task.assignee?.image && (
+                  <img src={task.assignee.image} alt={task.assignee.name} className="w-4 h-4 rounded-full flex-shrink-0 object-cover" />
                 )}
-              >
-                {isValid && (
-                  <>
-                    <div className={cn(
-                      "w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-medium flex-shrink-0 mt-2 ml-2 mb-1",
-                      isToday(day) ? "bg-brand text-brand-foreground" : "text-foreground"
-                    )}>
-                      {day}
-                    </div>
-                    <div className="flex flex-col gap-1.5 overflow-y-auto px-2 pb-2 flex-1 min-h-0">
-                      {dayTasks.map((task) => {
-                        const ci = projectColorMap.get(task.project.id) ?? 0;
-                        const color = PROJECT_COLORS[ci];
-                        return (
-                          <button
-                            key={task.id}
-                            onClick={() => setEditTask(task)}
-                            className={cn(
-                              "w-full text-left rounded-md pl-2 pr-1.5 py-1.5 text-[11.5px] leading-snug transition-opacity hover:opacity-80",
-                              color.bg, color.text,
-                              STATUS_BORDER[task.status]
-                            )}
-                          >
-                            <div className="flex items-start gap-1.5">
-                              <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[3px]", PRIORITY_DOT[task.priority])} />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold truncate">{task.title}</p>
-                                <p className="opacity-60 truncate text-[11px] mt-0.5">{task.project.name}</p>
-                              </div>
-                              {task.assignee?.image && (
-                                <img src={task.assignee.image} alt={task.assignee.name} className="w-4 h-4 rounded-full flex-shrink-0 object-cover" />
-                              )}
-                              {task.assignee && !task.assignee.image && (
-                                <div className="w-4 h-4 rounded-full flex-shrink-0 bg-surface-3 flex items-center justify-center">
-                                  <span className="text-[8px] font-bold text-muted">{task.assignee.name.slice(0, 1).toUpperCase()}</span>
-                                </div>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
+                {task.assignee && !task.assignee.image && (
+                  <div className="w-4 h-4 rounded-full flex-shrink-0 bg-surface-3 flex items-center justify-center">
+                    <span className="text-[8px] font-bold text-muted">{task.assignee.name.slice(0, 1).toUpperCase()}</span>
+                  </div>
                 )}
               </div>
-            );
-          })}
-        </div>
-      </div>
+            </button>
+          );
+        }}
+        headerExtra={
+          <>
+            {/* Status filter buttons */}
+            {STATUS_OPTIONS.map((s) => {
+              const active = !hiddenStatuses.has(s.value);
+              return (
+                <button
+                  key={s.value}
+                  onClick={() => applyStatusToggle(s.value)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 h-8 rounded-lg border text-[13px] font-medium transition-colors",
+                    active
+                      ? "bg-surface-3 border-border text-foreground"
+                      : "bg-card border-border text-muted hover:text-foreground hover:bg-surface-2 opacity-50"
+                  )}
+                >
+                  <span className={cn("w-[3px] h-4 rounded-full", active ? s.bar : "bg-muted")} />
+                  {s.label}
+                </button>
+              );
+            })}
+
+            {/* Project filter dropdown */}
+            {projects.length > 0 && (
+              <div className="relative" ref={projectDropRef}>
+                <button
+                  onClick={() => setProjectDropOpen((v) => !v)}
+                  className="flex items-center gap-2 px-3 h-8 rounded-lg border border-border bg-card hover:bg-surface-2 text-[13px] text-foreground transition-colors"
+                >
+                  <span>
+                    {hiddenProjects.size === 0
+                      ? "All projects"
+                      : `${projects.length - hiddenProjects.size} / ${projects.length}`}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-muted" />
+                </button>
+
+                {projectDropOpen && (
+                  <div className="absolute right-0 top-10 z-20 w-52 rounded-xl border border-border bg-card shadow-lg py-1.5">
+                    <div className="flex items-center justify-between px-3 pb-1.5 mb-1 border-b border-border">
+                      <span className="text-[11px] font-semibold text-muted uppercase tracking-wide">Projects</span>
+                      <button
+                        onClick={() => setHiddenProjects(new Set())}
+                        className="text-[11px] text-brand hover:underline"
+                      >
+                        Show all
+                      </button>
+                    </div>
+                    {projects.map((p) => {
+                      const ci = projectColorMap.get(p.id) ?? 0;
+                      const color = PROJECT_COLORS[ci];
+                      const visible = !hiddenProjects.has(p.id);
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => toggleProject(p.id)}
+                          className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-surface-2 transition-colors text-left"
+                        >
+                          <span className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", color.dot)} />
+                          <span className={cn("flex-1 text-[13px] truncate", visible ? "text-foreground" : "text-muted line-through")}>
+                            {p.name}
+                          </span>
+                          {visible && <Check className="w-3.5 h-3.5 text-brand flex-shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        }
+      />
 
       {editTask && (
         <TaskEditModal

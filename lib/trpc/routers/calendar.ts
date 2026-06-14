@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "@/lib/trpc/init";
 import { requireWorkspaceMember } from "@/lib/trpc/guards";
+import { getMonthRange } from "@/lib/date/month-range";
 
 export const calendarRouter = router({
   tasks: protectedProcedure
@@ -12,8 +13,7 @@ export const calendarRouter = router({
     .query(async ({ ctx, input }) => {
       await requireWorkspaceMember(ctx.prisma, ctx.session.user.id, input.workspaceId);
 
-      const startDate = new Date(input.year, input.month - 1, 1);
-      const endDate = new Date(input.year, input.month, 0, 23, 59, 59, 999);
+      const { start: startDate, end: endDate } = getMonthRange(input.year, input.month);
 
       const tasks = await ctx.prisma.task.findMany({
         where: {
@@ -55,5 +55,23 @@ export const calendarRouter = router({
           ? { id: t.assignees[0].user.id, name: t.assignees[0].user.name, image: t.assignees[0].user.image ?? null, tag: null }
           : null,
       }));
+    }),
+
+  assignments: protectedProcedure
+    .input(z.object({
+      year: z.number().int(),
+      month: z.number().int().min(1).max(12),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { start, end } = getMonthRange(input.year, input.month);
+
+      return ctx.prisma.assignment.findMany({
+        where: {
+          dueDate: { gte: start, lte: end },
+          course: { userId: ctx.session.user.id },
+        },
+        include: { course: { select: { id: true, name: true, color: true } } },
+        orderBy: { dueDate: "asc" },
+      });
     }),
 });
