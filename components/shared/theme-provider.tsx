@@ -6,8 +6,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 
 type Theme = "light" | "dark" | "system";
 export type Accent = "indigo" | "yellow" | "blue" | "pink" | "green" | "kimmy";
+export type Font = "default" | "serif" | "mono";
 
 const VALID_ACCENTS: Accent[] = ["indigo", "yellow", "blue", "pink", "green", "kimmy"];
+const VALID_FONTS: Font[] = ["default", "serif", "mono"];
 
 type ThemeContextValue = {
   theme: Theme;
@@ -15,6 +17,8 @@ type ThemeContextValue = {
   setTheme: (t: Theme) => void;
   accent: Accent;
   setAccent: (a: Accent) => void;
+  font: Font;
+  setFont: (f: Font) => void;
   sidebarSticky: boolean;
   setSidebarSticky: (v: boolean) => void;
 };
@@ -25,6 +29,8 @@ const ThemeContext = createContext<ThemeContextValue>({
   setTheme: () => {},
   accent: "indigo",
   setAccent: () => {},
+  font: "default",
+  setFont: () => {},
   sidebarSticky: false,
   setSidebarSticky: () => {},
 });
@@ -37,6 +43,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("system");
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
   const [accent, setAccentState] = useState<Accent>("indigo");
+  const [font, setFontState] = useState<Font>("default");
   const [sidebarSticky, setSidebarStickyState] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -56,6 +63,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setAccentState(storedAccent);
     applyAccent(storedAccent);
 
+    const rawFont = localStorage.getItem("font") as Font;
+    const storedFont = VALID_FONTS.includes(rawFont) ? rawFont : "default";
+    if (!VALID_FONTS.includes(rawFont)) localStorage.setItem("font", "default");
+    setFontState(storedFont);
+    applyFont(storedFont);
+
     setSidebarStickyState(localStorage.getItem("sidebar-sticky") === "true");
   }, []);
 
@@ -69,6 +82,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setAccentState(accent);
     localStorage.setItem("accent", accent);
     applyAccent(accent);
+
+    const font = (serverTheme.font && VALID_FONTS.includes(serverTheme.font as Font))
+      ? serverTheme.font as Font
+      : "default";
+    setFontState(font);
+    localStorage.setItem("font", font);
+    applyFont(font);
 
     const mode = (serverTheme.mode as Theme) ?? "system";
     setThemeState(mode);
@@ -92,7 +112,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  function scheduleSave(patch: { accent?: Accent; mode?: Theme }) {
+  function applyFont(f: Font) {
+    if (f === "default") {
+      document.documentElement.removeAttribute("data-font");
+    } else {
+      document.documentElement.setAttribute("data-font", f);
+    }
+  }
+
+  function scheduleSave(patch: { accent?: Accent; mode?: Theme; font?: Font }) {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => saveTheme(patch), 800);
   }
@@ -111,6 +139,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     scheduleSave({ accent: a });
   }
 
+  function setFont(f: Font) {
+    setFontState(f);
+    localStorage.setItem("font", f);
+    applyFont(f);
+    scheduleSave({ font: f });
+  }
+
   function setSidebarSticky(v: boolean) {
     setSidebarStickyState(v);
     localStorage.setItem("sidebar-sticky", String(v));
@@ -124,7 +159,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, accent, setAccent, sidebarSticky, setSidebarSticky }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, accent, setAccent, font, setFont, sidebarSticky, setSidebarSticky }}>
       {children}
     </ThemeContext.Provider>
   );

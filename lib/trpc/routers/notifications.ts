@@ -1,8 +1,15 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "@/lib/trpc/init";
+import { runReminderCheck } from "@/lib/jobs/reminder-check";
+import { runAssignmentDeadlineCheck } from "@/lib/jobs/assignment-deadline-check";
+
+async function runChecks() {
+  await Promise.all([runReminderCheck(), runAssignmentDeadlineCheck()]);
+}
 
 export const notificationsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
+    await runChecks();
     return ctx.prisma.notification.findMany({
       where: { userId: ctx.session.user.id, dismissed: false },
       include: {
@@ -19,6 +26,16 @@ export const notificationsRouter = router({
             },
           },
         },
+        assignment: {
+          select: {
+            id: true,
+            title: true,
+            dueDate: true,
+            type: true,
+            course: { select: { id: true, name: true, color: true } },
+          },
+        },
+        reminder: { select: { id: true, text: true, remindAt: true } },
       },
       orderBy: { createdAt: "desc" },
       take: 100,
@@ -26,6 +43,7 @@ export const notificationsRouter = router({
   }),
 
   unreadCount: protectedProcedure.query(async ({ ctx }) => {
+    await runChecks();
     return ctx.prisma.notification.count({
       where: { userId: ctx.session.user.id, read: false, dismissed: false },
     });

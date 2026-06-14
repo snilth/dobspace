@@ -5,6 +5,7 @@ import { ActivityTabs } from "@/components/dashboard/activity-tabs";
 import { TaskSummary } from "@/components/dashboard/task-summary";
 import { TodoListCard } from "@/components/dashboard/todo-list-card";
 import { TeamCard } from "@/components/dashboard/team-card";
+import { RemindersCard } from "@/components/dashboard/reminders-card";
 
 export default async function DashboardPage() {
   const trpc = await createServerCaller();
@@ -12,10 +13,11 @@ export default async function DashboardPage() {
   const { workspace, isOwner } = await trpc.workspace.getCurrent();
   const workspaceId = workspace.id;
 
-  const [projects, members, stats] = await Promise.all([
+  const [projects, members, stats, reminders] = await Promise.all([
     trpc.projects.list({ workspaceId }),
     trpc.workspace.membersWithProjects({ workspaceId }),
     trpc.dashboard.stats({ workspaceId }),
+    trpc.assignments.reminders(),
   ]);
 
   const activeProjects = projects.filter((p: typeof projects[number]) => p.status === "ACTIVE");
@@ -45,17 +47,22 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:flex-1 lg:min-h-0 lg:overflow-hidden">
-        {/* Left: Project Progress / Recent Activity */}
-        <div className="lg:col-span-2 lg:h-full lg:min-h-0">
+        {/* Section 1: Project Progress / Recent Activity */}
+        <div className="lg:h-full lg:min-h-0">
           <ActivityTabs
             projectProgress={stats.projectProgress}
             recentActivity={stats.recentActivity}
           />
         </div>
 
-        {/* Right: to-dos + team */}
+        {/* Section 2: To-Dos */}
         <div className="flex flex-col gap-5 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:-mr-1">
           <TodoListCard workspaceId={workspaceId} />
+          <RemindersCard assignments={reminders} />
+        </div>
+
+        {/* Section 3: Team Workload / Members */}
+        <div className="lg:h-full lg:min-h-0">
           <TeamCard
             workload={stats.workload}
             members={members}

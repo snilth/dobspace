@@ -3,16 +3,18 @@ import { router, protectedProcedure } from "@/lib/trpc/init";
 
 const VALID_ACCENTS = ["indigo", "yellow", "blue", "pink", "green", "kimmy"] as const;
 const VALID_MODES = ["light", "dark", "system"] as const;
+const VALID_FONTS = ["default", "serif", "mono"] as const;
 
 export const userThemeRouter = router({
   get: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.session.user.id },
-      select: { themeAccent: true, themeMode: true },
+      select: { themeAccent: true, themeMode: true, themeFont: true },
     });
     return {
       accent: (user?.themeAccent ?? null) as typeof VALID_ACCENTS[number] | null,
       mode: (user?.themeMode ?? null) as typeof VALID_MODES[number] | null,
+      font: (user?.themeFont ?? null) as typeof VALID_FONTS[number] | null,
     };
   }),
 
@@ -20,6 +22,7 @@ export const userThemeRouter = router({
     .input(z.object({
       accent: z.enum(VALID_ACCENTS).optional(),
       mode: z.enum(VALID_MODES).optional(),
+      font: z.enum(VALID_FONTS).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma.user.update({
@@ -27,6 +30,7 @@ export const userThemeRouter = router({
         data: {
           ...(input.accent !== undefined ? { themeAccent: input.accent } : {}),
           ...(input.mode !== undefined ? { themeMode: input.mode } : {}),
+          ...(input.font !== undefined ? { themeFont: input.font } : {}),
         },
       });
     }),

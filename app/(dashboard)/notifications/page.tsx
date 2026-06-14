@@ -24,6 +24,9 @@ function timeAgo(date: Date | string): string {
 type NotifMeta = {
   actor?: string;
   taskTitle?: string;
+  assignmentTitle?: string;
+  courseName?: string;
+  reminderText?: string;
   project?: string | null;
   dueDate?: string;
   reason?: string;
@@ -38,17 +41,22 @@ type Notif = {
   read: boolean;
   createdAt: Date | string;
   task?: { projectId: string; project?: { name: string } | null } | null;
+  assignment?: { id: string; title: string; dueDate: Date | string; type: string; course: { id: string; name: string; color: string } } | null;
+  reminder?: { id: string; text: string; remindAt: Date | string } | null;
 };
 
 const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
-  TASK_ASSIGNED:        { icon: UserPlus,      color: "text-[oklch(52%_0.19_228)]", bg: "bg-[oklch(95%_0.03_228)]", label: "Assigned" },
-  TASK_UPDATED:         { icon: Pencil,         color: "text-[oklch(52%_0.19_278)]", bg: "bg-[oklch(95%_0.03_278)]", label: "Updated"  },
-  TASK_MOVED:           { icon: ArrowRight,     color: "text-[oklch(52%_0.19_148)]", bg: "bg-[oklch(95%_0.03_148)]", label: "Moved"    },
-  DEADLINE_APPROACHING: { icon: Clock,          color: "text-[oklch(55%_0.19_55)]",  bg: "bg-[oklch(96%_0.04_55)]",  label: "Deadline" },
-  DEADLINE_OVERDUE:     { icon: AlertTriangle,  color: "text-[oklch(52%_0.22_27)]",  bg: "bg-[oklch(96%_0.04_27)]",  label: "Overdue"  },
-  TASK_COMMENTED:       { icon: Bell,           color: "text-[oklch(52%_0.19_320)]", bg: "bg-[oklch(95%_0.03_320)]", label: "Mention"  },
-  TASK_APPROVED:        { icon: CheckCheck,     color: "text-[oklch(52%_0.19_148)]", bg: "bg-[oklch(95%_0.03_148)]", label: "Approved" },
-  TASK_REJECTED:        { icon: X,              color: "text-[oklch(52%_0.22_27)]",  bg: "bg-[oklch(96%_0.04_27)]",  label: "Rejected" },
+  TASK_ASSIGNED:              { icon: UserPlus,      color: "text-[oklch(52%_0.19_228)]", bg: "bg-[oklch(95%_0.03_228)]", label: "Assigned" },
+  TASK_UPDATED:               { icon: Pencil,         color: "text-[oklch(52%_0.19_278)]", bg: "bg-[oklch(95%_0.03_278)]", label: "Updated"  },
+  TASK_MOVED:                 { icon: ArrowRight,     color: "text-[oklch(52%_0.19_148)]", bg: "bg-[oklch(95%_0.03_148)]", label: "Moved"    },
+  DEADLINE_APPROACHING:       { icon: Clock,          color: "text-[oklch(55%_0.19_55)]",  bg: "bg-[oklch(96%_0.04_55)]",  label: "Deadline" },
+  DEADLINE_OVERDUE:           { icon: AlertTriangle,  color: "text-[oklch(52%_0.22_27)]",  bg: "bg-[oklch(96%_0.04_27)]",  label: "Overdue"  },
+  TASK_COMMENTED:             { icon: Bell,           color: "text-[oklch(52%_0.19_320)]", bg: "bg-[oklch(95%_0.03_320)]", label: "Mention"  },
+  TASK_APPROVED:              { icon: CheckCheck,     color: "text-[oklch(52%_0.19_148)]", bg: "bg-[oklch(95%_0.03_148)]", label: "Approved" },
+  TASK_REJECTED:              { icon: X,              color: "text-[oklch(52%_0.22_27)]",  bg: "bg-[oklch(96%_0.04_27)]",  label: "Rejected" },
+  REMINDER:                   { icon: Bell,           color: "text-[oklch(52%_0.19_278)]", bg: "bg-[oklch(95%_0.03_278)]", label: "Reminder" },
+  ASSIGNMENT_DUE_APPROACHING: { icon: Clock,          color: "text-[oklch(55%_0.19_55)]",  bg: "bg-[oklch(96%_0.04_55)]",  label: "Due soon" },
+  ASSIGNMENT_DUE_OVERDUE:     { icon: AlertTriangle,  color: "text-[oklch(52%_0.22_27)]",  bg: "bg-[oklch(96%_0.04_27)]",  label: "Overdue"  },
 };
 
 const TABS = [
@@ -269,6 +277,12 @@ function NotifRow({ notification: n, onMarkRead, onMarkUnread, onDismiss }: {
               <span className="font-medium text-foreground-2">{meta?.project ?? n.task?.project?.name}</span>
             </div>
           )}
+          {meta?.courseName && (
+            <div className="flex items-center gap-2 text-[12px]">
+              <span className="text-muted w-16 flex-shrink-0">Course</span>
+              <span className="font-medium text-foreground-2">{meta.courseName}</span>
+            </div>
+          )}
           {meta?.dueDate && (
             <div className="flex items-center gap-2 text-[12px]">
               <span className="text-muted w-16 flex-shrink-0">Due date</span>
@@ -291,12 +305,19 @@ function NotifRow({ notification: n, onMarkRead, onMarkUnread, onDismiss }: {
           </div>
         )}
 
-        {/* View task link */}
+        {/* View task / assignment link */}
         {n.task && (
           <Link href={`/projects/${n.task.projectId}`}
             className="text-[11px] text-brand font-semibold hover:underline flex items-center gap-0.5 w-fit">
             <ExternalLink className="w-2.5 h-2.5" />
             View task
+          </Link>
+        )}
+        {n.assignment && (
+          <Link href={`/courses/${n.assignment.course.id}`}
+            className="text-[11px] text-brand font-semibold hover:underline flex items-center gap-0.5 w-fit">
+            <ExternalLink className="w-2.5 h-2.5" />
+            View course
           </Link>
         )}
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Sun, Moon, Monitor, PanelLeft } from "lucide-react";
-import { useTheme, type Accent } from "@/components/shared/theme-provider";
+import { useTheme, type Accent, type Font } from "@/components/shared/theme-provider";
 import { useSession } from "@/lib/auth/client";
 import { cn } from "@/lib/utils";
 import { Section } from "./account-section";
@@ -14,12 +14,18 @@ const MODES = [
   { value: "system" as const, icon: Monitor, label: "System" },
 ];
 
+const FONTS: { value: Font; label: string; className: string }[] = [
+  { value: "default", label: "Default", className: "font-sans" },
+  { value: "serif", label: "Serif", className: "font-serif" },
+  { value: "mono", label: "Mono", className: "font-mono" },
+];
+
 const BASE_ACCENTS: { value: Accent; label: string; color: string; ring: string }[] = [
-  { value: "indigo", label: "Indigo", color: "bg-[oklch(57%_0.245_278)]", ring: "ring-[oklch(57%_0.245_278)]" },
-  { value: "yellow", label: "Yellow", color: "bg-[oklch(72%_0.18_88)]",   ring: "ring-[oklch(72%_0.18_88)]"  },
-  { value: "blue",   label: "Blue",   color: "bg-[oklch(55%_0.22_228)]",  ring: "ring-[oklch(55%_0.22_228)]" },
-  { value: "pink",   label: "Pink",   color: "bg-[oklch(60%_0.22_345)]",  ring: "ring-[oklch(60%_0.22_345)]" },
-  { value: "green",  label: "Green",  color: "bg-[oklch(52%_0.19_148)]",  ring: "ring-[oklch(52%_0.19_148)]" },
+  { value: "indigo", label: "Taro",      color: "bg-[oklch(57%_0.245_278)]", ring: "ring-[oklch(57%_0.245_278)]" },
+  { value: "yellow", label: "Honey",     color: "bg-[oklch(74%_0.11_95)]",   ring: "ring-[oklch(74%_0.11_95)]"  },
+  { value: "blue",   label: "Blueberry", color: "bg-[oklch(55%_0.22_228)]",  ring: "ring-[oklch(55%_0.22_228)]" },
+  { value: "pink",   label: "Strawberry",color: "bg-[oklch(60%_0.22_345)]",  ring: "ring-[oklch(60%_0.22_345)]" },
+  { value: "green",  label: "Matcha",    color: "bg-[oklch(63%_0.069_138)]", ring: "ring-[oklch(63%_0.069_138)]" },
 ];
 
 const KIMMY_ACCENT = {
@@ -30,7 +36,7 @@ const KIMMY_ACCENT = {
 };
 
 export function PreferenceSection() {
-  const { theme, setTheme, accent, setAccent, sidebarSticky, setSidebarSticky } = useTheme();
+  const { theme, setTheme, accent, setAccent, font, setFont, sidebarSticky, setSidebarSticky } = useTheme();
   const { data: session } = useSession();
   const isKimmy = KIMMY_ALLOWED.includes(session?.user.email ?? "");
   const ACCENTS = isKimmy ? [...BASE_ACCENTS, KIMMY_ACCENT] : BASE_ACCENTS;
@@ -53,6 +59,28 @@ export function PreferenceSection() {
               )}
             >
               <Icon className="w-5 h-5" />
+              <span className="text-[12px] font-semibold">{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Font */}
+      <div>
+        <p className="text-xs font-semibold text-foreground-2 mb-3">Font</p>
+        <div className="grid grid-cols-3 gap-3">
+          {FONTS.map(({ value, label, className }) => (
+            <button
+              key={value}
+              onClick={() => setFont(value)}
+              className={cn(
+                "flex flex-col items-center gap-2.5 py-4 rounded-[10px] border-2 transition-all",
+                font === value
+                  ? "border-brand bg-brand-subtle text-brand"
+                  : "border-border bg-surface-2 text-muted hover:border-border-strong hover:text-foreground"
+              )}
+            >
+              <span className={cn("text-2xl leading-none", className)}>Ag</span>
               <span className="text-[12px] font-semibold">{label}</span>
             </button>
           ))}

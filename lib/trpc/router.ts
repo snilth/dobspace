@@ -9,6 +9,9 @@ import { notificationPreferenceRouter } from "./routers/notificationPreference";
 import { calendarRouter } from "./routers/calendar";
 import { userThemeRouter } from "./routers/userTheme";
 import { userPrefsRouter } from "./routers/userPrefs";
+import { coursesRouter } from "./routers/courses";
+import { assignmentsRouter } from "./routers/assignments";
+import { remindersRouter } from "./routers/reminders";
 export const appRouter = router({
   workspace: workspaceRouter,
   projects: projectsRouter,
@@ -20,6 +23,9 @@ export const appRouter = router({
   calendar: calendarRouter,
   userTheme: userThemeRouter,
   userPrefs: userPrefsRouter,
+  courses: coursesRouter,
+  assignments: assignmentsRouter,
+  reminders: remindersRouter,
 });
 
 export type AppRouter = typeof appRouter;

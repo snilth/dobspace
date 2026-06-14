@@ -1,3 +1,4 @@
+
 ## 1. Project Overview
 
 **DevMind** — project management web app for developer teams with an AI chatbot that understands project context.

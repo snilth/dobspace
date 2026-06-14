@@ -79,3 +79,24 @@ export async function getTaskWorkspaceId(prisma: PrismaClient, taskId: string) {
   if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Task not found" });
   return task.project.workspaceId;
 }
+
+/**
+ * Personal layer (Course/Assignment) is owned directly by a User — no Workspace involved.
+ */
+export async function requireCourseOwner(prisma: PrismaClient, userId: string, courseId: string) {
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { userId: true },
+  });
+  if (!course) throw new TRPCError({ code: "NOT_FOUND" });
+  if (course.userId !== userId) throw new TRPCError({ code: "FORBIDDEN" });
+}
+
+export async function requireAssignmentOwner(prisma: PrismaClient, userId: string, assignmentId: string) {
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    select: { course: { select: { userId: true } } },
+  });
+  if (!assignment) throw new TRPCError({ code: "NOT_FOUND" });
+  if (assignment.course.userId !== userId) throw new TRPCError({ code: "FORBIDDEN" });
+}
