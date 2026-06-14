@@ -28,4 +28,15 @@ app.prepare().then(() => {
     runDeadlineCheck().catch(console.error);
     setInterval(() => runDeadlineCheck().catch(console.error), THIRTY_MIN);
   });
+
+  // Personal reminders & assignment due dates — runs every 5 minutes
+  const FIVE_MIN = 5 * 60 * 1000;
+  import("./lib/jobs/reminder-check").then(({ runReminderCheck }) => {
+    runReminderCheck().catch(console.error);
+    setInterval(() => runReminderCheck().catch(console.error), FIVE_MIN);
+  });
+  import("./lib/jobs/assignment-deadline-check").then(({ runAssignmentDeadlineCheck }) => {
+    runAssignmentDeadlineCheck().catch(console.error);
+    setInterval(() => runAssignmentDeadlineCheck().catch(console.error), FIVE_MIN);
+  });
 });
