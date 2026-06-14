@@ -35,36 +35,6 @@ export const userPrefsRouter = router({
       });
     }),
 
-  getCalendarFilter: protectedProcedure
-    .input(z.object({ workspaceId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: ctx.session.user.id },
-        select: { calendarFilters: true },
-      });
-      const filters = (user?.calendarFilters as Record<string, string[]> | null) ?? {};
-      // returns the hidden statuses array, or null if never saved (caller uses default)
-      return (filters[input.workspaceId] as string[] | undefined) ?? null;
-    }),
-
-  setCalendarFilter: protectedProcedure
-    .input(z.object({
-      workspaceId: z.string(),
-      hiddenStatuses: z.array(z.enum(TASK_STATUSES)),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: ctx.session.user.id },
-        select: { calendarFilters: true },
-      });
-      const filters = (user?.calendarFilters as Record<string, string[]> | null) ?? {};
-      filters[input.workspaceId] = input.hiddenStatuses;
-      await ctx.prisma.user.update({
-        where: { id: ctx.session.user.id },
-        data: { calendarFilters: filters },
-      });
-    }),
-
   getPersonalCalendarFilter: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.session.user.id },

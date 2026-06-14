@@ -53,7 +53,7 @@ export function RemindersCard({ assignments }: { assignments: ReminderAssignment
   const hasAny = reminders.length > 0 || assignments.length > 0;
 
   return (
-    <div className="bg-card rounded-card border-t-[3px] border-t-brand border-x border-b border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)]">
+    <div className="bg-card rounded-card border-t-[3px] border-t-brand border-x border-b border-border p-4 shadow-[0_1px_4px_oklch(0%_0_0/4%)] flex flex-col lg:flex-1 lg:min-h-0">
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
         <div className="w-6 h-6 rounded-btn bg-brand-subtle text-brand flex items-center justify-center">
           <Bell className="w-3.5 h-3.5" />
@@ -87,7 +87,7 @@ export function RemindersCard({ assignments }: { assignments: ReminderAssignment
       {!hasAny ? (
         <p className="text-[13px] text-muted text-center py-6">No reminders set yet.</p>
       ) : (
-        <ul className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1 -mr-1">
+        <ul className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1 -mr-1 lg:max-h-none lg:flex-1 lg:min-h-0">
           {reminders.map((r) => (
             <li key={r.id} className="group flex items-start gap-2 p-2.5 rounded-btn border border-border">
               <div className="flex-1 min-w-0">

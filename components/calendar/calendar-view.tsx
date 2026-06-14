@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
-import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TaskEditModal } from "@/components/kanban/task-edit-modal";
 import type { BoardTask } from "@/components/kanban/kanban-board";
@@ -30,15 +29,6 @@ const STATUS_BORDER: Record<string, string> = {
   BACKLOG:     "border-l-[4px] border-l-[oklch(55%_0.04_258)]",
 };
 
-const STATUS_OPTIONS = [
-  { value: "BACKLOG",     label: "Backlog",     bar: "bg-[oklch(55%_0.04_258)]" },
-  { value: "IN_PROGRESS", label: "In Progress", bar: "bg-[oklch(45%_0.25_228)]" },
-  { value: "REVIEW",      label: "Review",      bar: "bg-[oklch(52%_0.22_55)]"  },
-] as const;
-
-// Hidden by default — user can override; persisted in DB
-const DEFAULT_HIDDEN: string[] = ["BACKLOG"];
-
 type CalendarTask = {
   id: string; title: string; description?: string | null;
   status: "BACKLOG" | "IN_PROGRESS" | "REVIEW" | "DONE";
@@ -48,83 +38,15 @@ type CalendarTask = {
   assignee: { id: string; name: string; image: string | null; tag: string | null } | null;
 };
 
-function cacheKey(workspaceId: string) {
-  return `calendar-status-filter:${workspaceId}`;
-}
-function readCache(workspaceId: string): string[] | null {
-  try {
-    const v = localStorage.getItem(cacheKey(workspaceId));
-    return v ? (JSON.parse(v) as string[]) : null;
-  } catch { return null; }
-}
-function writeCache(workspaceId: string, hidden: string[]) {
-  try { localStorage.setItem(cacheKey(workspaceId), JSON.stringify(hidden)); } catch {}
-}
-
 export function CalendarView({ workspaceId }: { workspaceId: string }) {
   const today = new Date();
   const [year, setYear]   = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
 
-  // Always start with default (SSR-safe). Read localStorage + DB after mount.
-  const [hiddenStatuses, setHiddenStatuses] = useState<Set<string>>(new Set(DEFAULT_HIDDEN));
-  const [hiddenProjects, setHiddenProjects] = useState<Set<string>>(new Set());
-
-  const [projectDropOpen, setProjectDropOpen] = useState(false);
   const [editTask, setEditTask] = useState<CalendarTask | null>(null);
-
-  const projectDropRef = useRef<HTMLDivElement>(null);
 
   const trpc        = useTRPC();
   const queryClient = useQueryClient();
-
-  // ── Persistence ────────────────────────────────────────────────────────────
-
-  const filterQuery = useQuery(
-    trpc.userPrefs.getCalendarFilter.queryOptions({ workspaceId })
-  );
-  const filterMutation = useMutation(
-    trpc.userPrefs.setCalendarFilter.mutationOptions()
-  );
-
-  // After mount: apply localStorage cache immediately (avoids SSR mismatch)
-  useEffect(() => {
-    const cached = readCache(workspaceId);
-    if (cached !== null) setHiddenStatuses(new Set(cached));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // When DB resolves: DB value wins (enables cross-device sync)
-  useEffect(() => {
-    if (filterQuery.data != null) {
-      setHiddenStatuses(new Set(filterQuery.data));
-      writeCache(workspaceId, filterQuery.data);
-    }
-  }, [filterQuery.data, workspaceId]);
-
-  function applyStatusToggle(status: string) {
-    setHiddenStatuses((prev) => {
-      const next = new Set(prev);
-      next.has(status) ? next.delete(status) : next.add(status);
-      const hidden = [...next] as ("BACKLOG" | "IN_PROGRESS" | "REVIEW" | "DONE")[];
-      writeCache(workspaceId, hidden);
-      filterMutation.mutate({ workspaceId, hiddenStatuses: hidden });
-      return next;
-    });
-  }
-
-  // ── Close dropdowns on outside click ───────────────────────────────────────
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (projectDropRef.current && !projectDropRef.current.contains(e.target as Node))
-        setProjectDropOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // ── Data ───────────────────────────────────────────────────────────────────
 
   function handleTaskUpdated() {
     setEditTask(null);
@@ -145,25 +67,15 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
     return map;
   }, [tasks]);
 
-  const projects = useMemo(() => {
-    const seen = new Map<string, string>();
-    tasks.forEach((t) => seen.set(t.project.id, t.project.name));
-    return [...seen.entries()].map(([id, name]) => ({ id, name }));
-  }, [tasks]);
-
-  const visibleTasks = tasks.filter(
-    (t) => !hiddenProjects.has(t.project.id) && !hiddenStatuses.has(t.status)
-  );
-
   const tasksByDay = useMemo(() => {
     const map = new Map<number, CalendarTask[]>();
-    visibleTasks.forEach((t) => {
+    tasks.forEach((t) => {
       const d = new Date(t.dueDate).getDate();
       if (!map.has(d)) map.set(d, []);
       map.get(d)!.push(t);
     });
     return map;
-  }, [visibleTasks]);
+  }, [tasks]);
 
   function prevMonth() {
     if (month === 1) { setMonth(12); setYear((y) => y - 1); }
@@ -172,14 +84,6 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
   function nextMonth() {
     if (month === 12) { setMonth(1); setYear((y) => y + 1); }
     else setMonth((m) => m + 1);
-  }
-
-  function toggleProject(id: string) {
-    setHiddenProjects((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
   }
 
   return (
@@ -222,78 +126,6 @@ export function CalendarView({ workspaceId }: { workspaceId: string }) {
             </button>
           );
         }}
-        headerExtra={
-          <>
-            {/* Status filter buttons */}
-            {STATUS_OPTIONS.map((s) => {
-              const active = !hiddenStatuses.has(s.value);
-              return (
-                <button
-                  key={s.value}
-                  onClick={() => applyStatusToggle(s.value)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 h-8 rounded-lg border text-[13px] font-medium transition-colors",
-                    active
-                      ? "bg-surface-3 border-border text-foreground"
-                      : "bg-card border-border text-muted hover:text-foreground hover:bg-surface-2 opacity-50"
-                  )}
-                >
-                  <span className={cn("w-[3px] h-4 rounded-full", active ? s.bar : "bg-muted")} />
-                  {s.label}
-                </button>
-              );
-            })}
-
-            {/* Project filter dropdown */}
-            {projects.length > 0 && (
-              <div className="relative" ref={projectDropRef}>
-                <button
-                  onClick={() => setProjectDropOpen((v) => !v)}
-                  className="flex items-center gap-2 px-3 h-8 rounded-lg border border-border bg-card hover:bg-surface-2 text-[13px] text-foreground transition-colors"
-                >
-                  <span>
-                    {hiddenProjects.size === 0
-                      ? "All projects"
-                      : `${projects.length - hiddenProjects.size} / ${projects.length}`}
-                  </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-muted" />
-                </button>
-
-                {projectDropOpen && (
-                  <div className="absolute right-0 top-10 z-20 w-52 rounded-xl border border-border bg-card shadow-lg py-1.5">
-                    <div className="flex items-center justify-between px-3 pb-1.5 mb-1 border-b border-border">
-                      <span className="text-[11px] font-semibold text-muted uppercase tracking-wide">Projects</span>
-                      <button
-                        onClick={() => setHiddenProjects(new Set())}
-                        className="text-[11px] text-brand hover:underline"
-                      >
-                        Show all
-                      </button>
-                    </div>
-                    {projects.map((p) => {
-                      const ci = projectColorMap.get(p.id) ?? 0;
-                      const color = PROJECT_COLORS[ci];
-                      const visible = !hiddenProjects.has(p.id);
-                      return (
-                        <button
-                          key={p.id}
-                          onClick={() => toggleProject(p.id)}
-                          className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-surface-2 transition-colors text-left"
-                        >
-                          <span className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", color.dot)} />
-                          <span className={cn("flex-1 text-[13px] truncate", visible ? "text-foreground" : "text-muted line-through")}>
-                            {p.name}
-                          </span>
-                          {visible && <Check className="w-3.5 h-3.5 text-brand flex-shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        }
       />
 
       {editTask && (

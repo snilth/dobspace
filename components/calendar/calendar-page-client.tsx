@@ -6,8 +6,8 @@ import { CalendarView } from "./calendar-view";
 import { MyCoursesCalendarView } from "./my-courses-calendar-view";
 
 const TABS = [
-  { value: "team",    label: "Team" },
-  { value: "courses", label: "My Courses" },
+  { value: "team",    label: "Project" },
+  { value: "courses", label: "Courses" },
 ] as const;
 
 type Tab = (typeof TABS)[number]["value"];

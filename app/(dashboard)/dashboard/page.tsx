@@ -56,7 +56,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Section 2: To-Dos */}
-        <div className="flex flex-col gap-5 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:-mr-1">
+        <div className="flex flex-col gap-5 lg:h-full lg:min-h-0">
           <TodoListCard workspaceId={workspaceId} />
           <RemindersCard assignments={reminders} />
         </div>
