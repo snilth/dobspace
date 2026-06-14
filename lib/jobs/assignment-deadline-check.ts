@@ -10,7 +10,6 @@ function fmtDate(d: Date) {
 // Notifies the owner of each undone Assignment whose due date is approaching or has passed.
 export async function runAssignmentDeadlineCheck() {
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   // ── Due soon (within 24h) ───────────────────────────────────────────────
   const windowEnd = new Date(now.getTime() + HOURS_BEFORE * 60 * 60 * 1000);
@@ -22,12 +21,7 @@ export async function runAssignmentDeadlineCheck() {
 
   for (const a of approaching) {
     const alreadySent = await prisma.notification.findFirst({
-      where: {
-        userId: a.course.userId,
-        assignmentId: a.id,
-        type: "ASSIGNMENT_DUE_APPROACHING",
-        createdAt: { gte: today },
-      },
+      where: { userId: a.course.userId, assignmentId: a.id, type: "ASSIGNMENT_DUE_APPROACHING" },
     });
     if (alreadySent) continue;
 
@@ -53,7 +47,7 @@ export async function runAssignmentDeadlineCheck() {
 
   for (const a of overdue) {
     const alreadySent = await prisma.notification.findFirst({
-      where: { userId: a.course.userId, assignmentId: a.id, type: "ASSIGNMENT_DUE_OVERDUE", dismissed: false },
+      where: { userId: a.course.userId, assignmentId: a.id, type: "ASSIGNMENT_DUE_OVERDUE" },
     });
     if (alreadySent) continue;
 

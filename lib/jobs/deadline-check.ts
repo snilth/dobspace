@@ -39,7 +39,6 @@ export async function runDeadlineCheck() {
           taskId: task.id,
           type: "DEADLINE_APPROACHING",
           createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) },
-          dismissed: false,
         },
       });
       if (alreadySent) continue;
@@ -83,7 +82,6 @@ export async function runDeadlineCheck() {
         userId: pref.userId,
         taskId: task.id,
         type: "DEADLINE_OVERDUE" as const,
-        dismissed: false,
       };
 
       if (overdue.interval === "once") {
