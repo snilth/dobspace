@@ -239,7 +239,7 @@ export function DatePicker({
       {open && position && createPortal(
         <div
           ref={popoverRef}
-          className="fixed z-50 w-66 bg-card border border-border rounded-card shadow-xl p-3"
+          className="fixed z-[110] w-66 bg-card border border-border rounded-card shadow-xl p-3"
           style={{ top: position.top, left: position.left }}
         >
           <MonthCalendar
@@ -341,7 +341,7 @@ export function DateTimePicker({
       {open && position && createPortal(
         <div
           ref={popoverRef}
-          className="fixed z-50 w-66 bg-card border border-border rounded-card shadow-xl p-3"
+          className="fixed z-[110] w-66 bg-card border border-border rounded-card shadow-xl p-3"
           style={{ top: position.top, left: position.left }}
         >
           <MonthCalendar
