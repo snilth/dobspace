@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +12,8 @@ const MONTHS = [
 ];
 
 const POPOVER_WIDTH = 264;
+const DATE_POPOVER_HEIGHT = 330;
+const DATETIME_POPOVER_HEIGHT = 390;
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -40,11 +43,14 @@ function formatDisplayTime(time: string) {
   return `${h12}:${m[2]} ${period}`;
 }
 
-function useDismiss(ref: React.RefObject<HTMLElement | null>, onDismiss: () => void, active: boolean) {
+// A click/scroll outside ANY of the given elements (trigger + portaled popover) dismisses.
+function useDismiss(refs: React.RefObject<HTMLElement | null>[], onDismiss: () => void, active: boolean) {
   useEffect(() => {
     if (!active) return;
     function handlePointer(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onDismiss();
+      const target = e.target as Node;
+      if (refs.some((ref) => ref.current?.contains(target))) return;
+      onDismiss();
     }
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onDismiss();
@@ -57,13 +63,16 @@ function useDismiss(ref: React.RefObject<HTMLElement | null>, onDismiss: () => v
       document.removeEventListener("keydown", handleKey);
       window.removeEventListener("scroll", onDismiss, true);
     };
-  }, [ref, onDismiss, active]);
+  }, [refs, onDismiss, active]);
 }
 
+// Positions a fixed popover near its trigger, flipping above and clamping
+// to the viewport so it never gets cut off by a modal's overflow-hidden edge.
 function usePopoverPosition(
   triggerRef: React.RefObject<HTMLElement | null>,
   open: boolean,
   width: number,
+  height: number,
   align: "left" | "right"
 ) {
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
@@ -76,8 +85,15 @@ function usePopoverPosition(
     const rect = triggerRef.current.getBoundingClientRect();
     let left = align === "right" ? rect.right - width : rect.left;
     left = Math.min(Math.max(left, 8), window.innerWidth - width - 8);
-    setPosition({ top: rect.bottom + 6, left });
-  }, [open, triggerRef, width, align]);
+
+    let top = rect.bottom + 6;
+    if (top + height > window.innerHeight - 8) {
+      const above = rect.top - height - 6;
+      top = above >= 8 ? above : Math.max(8, window.innerHeight - height - 8);
+    }
+
+    setPosition({ top, left });
+  }, [open, triggerRef, width, height, align]);
 
   return position;
 }
@@ -173,12 +189,13 @@ export function DatePicker({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const selected = parseDateValue(value);
   const [viewYear, setViewYear] = useState(() => (selected ?? new Date()).getFullYear());
   const [viewMonth, setViewMonth] = useState(() => (selected ?? new Date()).getMonth() + 1);
 
-  useDismiss(containerRef, () => setOpen(false), open);
-  const position = usePopoverPosition(triggerRef, open, POPOVER_WIDTH, "left");
+  useDismiss([containerRef, popoverRef], () => setOpen(false), open);
+  const position = usePopoverPosition(triggerRef, open, POPOVER_WIDTH, DATE_POPOVER_HEIGHT, "left");
 
   function toggleOpen() {
     if (!open) {
@@ -208,7 +225,7 @@ export function DatePicker({
         type="button"
         onClick={toggleOpen}
         className={cn(
-          "w-full h-10 px-3 text-sm bg-surface border border-border rounded-[8px] outline-none transition-all flex items-center justify-between gap-2",
+          "w-full h-10 px-3 text-sm bg-surface border border-border rounded-btn outline-none transition-all flex items-center justify-between gap-2",
           open ? "border-brand/60 ring-3 ring-brand/8" : "focus:border-brand/60 focus:ring-3 focus:ring-brand/8",
           className
         )}
@@ -219,9 +236,10 @@ export function DatePicker({
         <CalendarIcon className="w-4 h-4 text-muted shrink-0" />
       </button>
 
-      {open && position && (
+      {open && position && createPortal(
         <div
-          className="fixed z-50 w-[264px] bg-card border border-border rounded-[12px] shadow-xl p-3"
+          ref={popoverRef}
+          className="fixed z-50 w-66 bg-card border border-border rounded-card shadow-xl p-3"
           style={{ top: position.top, left: position.left }}
         >
           <MonthCalendar
@@ -243,7 +261,8 @@ export function DatePicker({
               </button>
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -263,14 +282,15 @@ export function DateTimePicker({
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   const [datePart, timePart] = value.includes("T") ? (value.split("T") as [string, string]) : [value, ""];
   const selected = parseDateValue(datePart);
   const [viewYear, setViewYear] = useState(() => (selected ?? new Date()).getFullYear());
   const [viewMonth, setViewMonth] = useState(() => (selected ?? new Date()).getMonth() + 1);
 
-  useDismiss(containerRef, () => setOpen(false), open);
-  const position = usePopoverPosition(triggerRef, open, POPOVER_WIDTH, "right");
+  useDismiss([containerRef, popoverRef], () => setOpen(false), open);
+  const position = usePopoverPosition(triggerRef, open, POPOVER_WIDTH, DATETIME_POPOVER_HEIGHT, "right");
 
   function toggleOpen() {
     if (!open) {
@@ -318,9 +338,10 @@ export function DateTimePicker({
         <span className={selected ? "" : "text-muted-2"}>{display}</span>
       </button>
 
-      {open && position && (
+      {open && position && createPortal(
         <div
-          className="fixed z-50 w-[264px] bg-card border border-border rounded-[12px] shadow-xl p-3"
+          ref={popoverRef}
+          className="fixed z-50 w-66 bg-card border border-border rounded-card shadow-xl p-3"
           style={{ top: position.top, left: position.left }}
         >
           <MonthCalendar
@@ -348,7 +369,8 @@ export function DateTimePicker({
               Done
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
