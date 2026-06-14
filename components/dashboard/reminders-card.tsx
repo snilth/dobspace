@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 import { Bell, Plus, X } from "lucide-react";
+import { DateTimePicker } from "@/components/shared/date-picker";
 
 type ReminderAssignment = {
   id: string;
@@ -68,12 +69,7 @@ export function RemindersCard({ assignments }: { assignments: ReminderAssignment
           placeholder="Remind me to..."
           className="flex-1 min-w-0 text-[13px] px-3 py-2 rounded-full border border-border bg-surface-2 placeholder:text-muted-2 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
         />
-        <input
-          type="datetime-local"
-          value={remindAt}
-          onChange={(e) => setRemindAt(e.target.value)}
-          className="text-[12px] px-2 py-2 rounded-full border border-border bg-surface-2 text-foreground-2 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
-        />
+        <DateTimePicker value={remindAt} onChange={setRemindAt} placeholder="Date & time" />
         <button
           type="submit"
           disabled={!text.trim() || !remindAt || createReminder.isPending}

@@ -6,6 +6,7 @@ import { Loader2, X, Trash2, Check, AlertTriangle, Bell } from "lucide-react";
 import type { AssignmentType, Priority } from "@prisma/client";
 import { useTRPC } from "@/lib/trpc/client";
 import { BlockNoteEditor } from "@/components/shared/block-note-editor";
+import { DatePicker } from "@/components/shared/date-picker";
 import { type Assignment, TYPE_LABEL, PRIORITY_LABEL } from "./assignment-list";
 
 function toDateInputValue(d: Date) {
@@ -102,13 +103,7 @@ export function AssignmentModal({ assignment, onClose, onSaved, onDeleted }: {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-foreground-2">Due date *</label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                required
-                className="w-full h-10 px-3 text-sm bg-surface border border-border rounded-[8px] outline-none focus:border-brand/60 focus:ring-3 focus:ring-brand/8 transition-all"
-              />
+              <DatePicker value={dueDate} onChange={setDueDate} />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-foreground-2">Type</label>

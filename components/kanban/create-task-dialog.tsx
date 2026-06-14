@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { CatIcon } from "@/components/shared/cat-icon";
 import { AssigneeDropdown } from "./assignee-dropdown";
 import { MentionTextarea } from "@/components/shared/mention-textarea";
+import { DatePicker } from "@/components/shared/date-picker";
 import type { TaskStatus, BoardTask } from "./kanban-board";
 
 const PRIORITY_OPTS = [
@@ -168,12 +169,7 @@ export function CreateTaskDialog({
             <label className="text-xs font-semibold text-foreground-2">
               Due date <span className="font-normal text-muted">(optional)</span>
             </label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full h-10 px-3 text-sm bg-surface border border-border rounded-[8px] outline-none focus:border-brand/60 focus:ring-2 focus:ring-brand/8 transition-all text-foreground"
-            />
+            <DatePicker value={dueDate} onChange={setDueDate} placeholder="No due date" />
           </div>
 
           {/* Tags */}

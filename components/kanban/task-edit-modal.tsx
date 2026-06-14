@@ -7,6 +7,7 @@ import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { AssigneeDropdown } from "./assignee-dropdown";
 import { MentionTextarea } from "@/components/shared/mention-textarea";
+import { DatePicker } from "@/components/shared/date-picker";
 import type { BoardTask, TaskStatus } from "./kanban-board";
 
 const PRIORITY_OPTS = [
@@ -181,8 +182,7 @@ export function TaskEditModal({ task, workspaceId = "", canAssign = false, onClo
           {/* Due date */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-foreground-2">Due date</label>
-            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
-              className="w-full h-10 px-3 text-sm bg-surface border border-border rounded-[8px] outline-none focus:border-brand/60 focus:ring-2 focus:ring-brand/8 transition-all text-foreground" />
+            <DatePicker value={dueDate} onChange={setDueDate} placeholder="No due date" />
           </div>
 
           {/* Tags */}

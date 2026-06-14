@@ -7,6 +7,7 @@ import type { AssignmentType, Priority } from "@prisma/client";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { BlockNoteEditor } from "@/components/shared/block-note-editor";
+import { DatePicker } from "@/components/shared/date-picker";
 import { type Assignment, TYPE_LABEL } from "./assignment-list";
 
 const PRIORITY_OPTS = [
@@ -114,13 +115,7 @@ export function AssignmentCreateDialog({ courseId, type, onClose, onCreated }: {
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-foreground-2">Due date</label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              required
-              className="w-full h-10 px-3 text-sm bg-surface border border-border rounded-[8px] outline-none focus:border-brand/60 focus:ring-2 focus:ring-brand/8 transition-all text-foreground"
-            />
+            <DatePicker value={dueDate} onChange={setDueDate} />
           </div>
 
           <div className="space-y-1.5">
